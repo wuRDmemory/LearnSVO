@@ -1,3 +1,0 @@
-/home/ubuntu/Projects/SLAM/LearnSVO/build/CMakeFiles/rebuild_cache.dir
-/home/ubuntu/Projects/SLAM/LearnSVO/build/CMakeFiles/edit_cache.dir
-/home/ubuntu/Projects/SLAM/LearnSVO/build/CMakeFiles/LEARN_SVO.dir
