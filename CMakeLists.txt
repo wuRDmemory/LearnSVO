@@ -7,6 +7,7 @@ list(APPEND CMAKE_MODULE_PATH "/usr/local/lib/cmake/Ceres")
 include_directories(/usr/include/eigen3)
 include_directories(${PROJECT_SOURCE_DIR}/ImageAlign)
 include_directories(${PROJECT_SOURCE_DIR}/Utils)
+include_directories(${PROJECT_SOURCE_DIR}/Camera)
 
 find_package(OpenCV REQUIRED)
 if (OpenCV_FOUND)
@@ -27,7 +28,8 @@ endif()
 
 file(GLOB SOURCES 
         ${PROJECT_SOURCE_DIR}/ImageAlign/*.cc
-        ${PROJECT_SOURCE_DIR}/Utils/*.cc)
+        ${PROJECT_SOURCE_DIR}/Utils/*.cc
+        ${PROJECT_SOURCE_DIR}/Camera/*.cc)
 
 add_executable(${PROJECT_NAME} main.cc ${SOURCES})
 target_link_libraries(${PROJECT_NAME} ${OpenCV_LIBS} ${CERES_LIBRARIES} ${GLOG_LIBRARIES})
