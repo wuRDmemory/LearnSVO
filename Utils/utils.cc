@@ -1,5 +1,17 @@
 #include "utils.hpp"
 
+Config* Config::mInstance = NULL;
+
+Config::Config(string configFile) {
+    cv::FileStorage file(configFile, cv::FileStorage::READ);
+    if (!file.isOpened()) {
+        throw std::io_errc();
+    }
+
+    pyramidNum = static_cast<int>(file["pyr_num"]);
+    pyramidFactor = static_cast<float>(file["pyr_factor"]);
+}
+
 int loadDirectory(std::string dir_path, std::vector<std::string>& file_list, string pattern) {
     int pattern_len = pattern.size();
     DIR * dir;

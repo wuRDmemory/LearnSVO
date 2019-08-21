@@ -5,7 +5,7 @@ set(CMAKE_CXX_STANDARD 11)
 list(APPEND CMAKE_MODULE_PATH "/usr/local/lib/cmake/Ceres")
 
 include_directories(/usr/include/eigen3)
-include_directories(${PROJECT_SOURCE_DIR}/ImageAlign)
+include_directories(${PROJECT_SOURCE_DIR}/src)
 include_directories(${PROJECT_SOURCE_DIR}/Utils)
 include_directories(${PROJECT_SOURCE_DIR}/Camera)
 
@@ -26,10 +26,16 @@ if (GLOG_FOUND)
     message("-- Found Glog ${GLOG_VERSION}")
 endif()
 
+find_package(Sophus REQUIRED)
+if (Sophus_FOUND)
+    include_directories(${Sophus_INCLUDE_DIRS})
+    message("-- Found Sophus ${Sophus_VERSION}")
+endif()
+
 file(GLOB SOURCES 
-        ${PROJECT_SOURCE_DIR}/ImageAlign/*.cc
+        ${PROJECT_SOURCE_DIR}/src/*.cc
         ${PROJECT_SOURCE_DIR}/Utils/*.cc
         ${PROJECT_SOURCE_DIR}/Camera/*.cc)
 
 add_executable(${PROJECT_NAME} main.cc ${SOURCES})
-target_link_libraries(${PROJECT_NAME} ${OpenCV_LIBS} ${CERES_LIBRARIES} ${GLOG_LIBRARIES})
+target_link_libraries(${PROJECT_NAME} ${OpenCV_LIBS} ${CERES_LIBRARIES} ${GLOG_LIBRARIES} ${Sophus_LIBRARIES})
