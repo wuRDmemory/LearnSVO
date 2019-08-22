@@ -11,8 +11,8 @@ using namespace std;
 
 class Config {
 private:
-    int pyramidNum;
-    float pyramidFactor;
+    int mPyramidNum, mFeatureNum;
+    float mPyramidFactor;
     static Config* mInstance;
 
 private:
@@ -28,8 +28,9 @@ public:
 
     static Config* getInstance() { return mInstance; }
 
-    inline static int   getPyramidNumber() { return mInstance->pyramidNum; }
-    inline static float getPyramidFactor() { return mInstance->pyramidFactor; }
+    inline static int   getPyramidNumber() { return mInstance->mPyramidNum; }
+    inline static int   getFeatureNumber() { return mInstance->mFeatureNum; }
+    inline static float getPyramidFactor() { return mInstance->mPyramidFactor; }
 };
 
 int loadDirectory(string dir_path, std::vector<std::string>& file_list, string pattern);

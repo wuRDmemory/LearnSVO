@@ -1,0 +1,6 @@
+# pyramid parameters
+pyr_num: 3
+pyr_factor: 2
+
+# feature parameters
+ftr_num: 500

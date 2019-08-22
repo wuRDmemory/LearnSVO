@@ -8,8 +8,9 @@ Config::Config(string configFile) {
         throw std::io_errc();
     }
 
-    pyramidNum = static_cast<int>(file["pyr_num"]);
-    pyramidFactor = static_cast<float>(file["pyr_factor"]);
+    mPyramidNum = static_cast<int>(file["pyr_num"]);
+    mFeatureNum = static_cast<int>(file["ftr_num"]);
+    mPyramidFactor = static_cast<float>(file["pyr_factor"]);
 }
 
 int loadDirectory(std::string dir_path, std::vector<std::string>& file_list, string pattern) {
