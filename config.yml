@@ -3,4 +3,7 @@ pyr_num: 3
 pyr_factor: 2
 
 # feature parameters
+grid_cell: 10
+image_width: 640
+image_height: 480
 ftr_num: 500

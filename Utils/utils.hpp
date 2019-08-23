@@ -12,6 +12,8 @@ using namespace std;
 class Config {
 private:
     int mPyramidNum, mFeatureNum;
+    int mImageWidth, mImageHeight;
+    int mGridCell;
     float mPyramidFactor;
     static Config* mInstance;
 
@@ -30,6 +32,9 @@ public:
 
     inline static int   getPyramidNumber() { return mInstance->mPyramidNum; }
     inline static int   getFeatureNumber() { return mInstance->mFeatureNum; }
+    inline static int   getImageWidth()  { return mInstance->mImageWidth;  }
+    inline static int   getImageHeight() { return mInstance->mImageHeight; }
+    inline static int   getGridCellNumber() { return mInstance->mGridCell; }
     inline static float getPyramidFactor() { return mInstance->mPyramidFactor; }
 };
 

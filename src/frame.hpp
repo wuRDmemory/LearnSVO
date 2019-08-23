@@ -20,7 +20,7 @@ namespace mSVO {
     typedef vector<cv::Mat> ImagePyr;
 
     class Frame {
-    private:
+    public:
         static int fID;
         int mID;
         bool isKeyFrame;

@@ -31,7 +31,8 @@ namespace mSVO {
         bool detectCorner(FramePtr frame, vector<cv::Point>& points, vector<Eigen::Vector3f>& ftrs);
 
     private:
-        cv::Ptr<cv::FastFeatureDetector> mDetector;
+        int mCellSize, mImWidth, mImHeight, mCellFtrNumber, mFtrNumber;
+        vector<cv::Rect> mGridCellRoi;
     };
 }
 
