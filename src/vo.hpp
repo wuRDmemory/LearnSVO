@@ -26,6 +26,7 @@ namespace mSVO {
     private:
         FramePtr mNewFrame;
         CameraModelPtr mCameraModel;
+        KltHomographyInit mInitialor;
         UPDATE_LEVEL updateLevel;
 
     public:
