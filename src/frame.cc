@@ -4,7 +4,7 @@
 namespace mSVO {
     int Frame::fID = 0;
     Frame::Frame(double timestamp, CameraModel* camera, cv::Mat& img):
-        mTimestamp(timestamp), mCammera(camera), mID(fID++), isKeyFrame(false), 
+        mTimestamp(timestamp), mCamera(camera), mID(fID++), isKeyFrame(false), 
         mObs(5) {
         initFrame(img);
     }

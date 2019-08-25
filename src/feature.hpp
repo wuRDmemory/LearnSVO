@@ -4,57 +4,45 @@
 #include <opencv2/opencv.hpp>
 #include <eigen3/Eigen/Dense>
 #include <eigen3/Eigen/Core>
-#include "Frame.hpp"
+#include "frame.hpp"
 
 namespace mSVO {
     using namespace std;
     using namespace cv;
     using namespace Eigen;
     
+    enum FeatureType {
+        CORNER,
+        EDGELET
+    };
+    class Point;
+
     class Feature {
+    public:
         EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
-        enum FeatureType {
-            CORNER,
-            EDGELET
-        };
+        FeatureType mType;     //!< Type can be corner or edgelet.
+        Frame* mFrame;         //!< Pointer to frame in which the feature was detected.
+        Vector2f mPx;          //!< Coordinates in pixels on pyramid level 0.
+        Vector3f mDirect;           //!< Unit-bearing vector of the feature.
+        int mLevel;            //!< Image pyramid level where feature was extracted.
+        Point* mPoint;         //!< Pointer to 3D point which corresponds to the feature.
 
-        FeatureType type;     //!< Type can be corner or edgelet.
-        Frame* frame;         //!< Pointer to frame in which the feature was detected.
-        Vector2d px;          //!< Coordinates in pixels on pyramid level 0.
-        Vector3d f;           //!< Unit-bearing vector of the feature.
-        int level;            //!< Image pyramid level where feature was extracted.
-        Point* point;         //!< Pointer to 3D point which corresponds to the feature.
-        Vector2d grad;        //!< Dominant gradient direction for edglets, normalized.
-
-        Feature(Frame* _frame, const Vector2d& _px, int _level) :
-            type(CORNER),
-            frame(_frame),
-            px(_px),
-            f(frame->cam_->cam2world(px)),
-            level(_level),
-            point(NULL),
-            grad(1.0,0.0)
+        Feature(Frame* frame, const Vector2f& px, int level=1) :
+            mType(CORNER), mFrame(frame), mPx(px),
+            mDirect(frame->mCamera->cam2world(px)),
+            mLevel(level), mPoint(NULL)
         {}
 
-        Feature(Frame* _frame, const Vector2d& _px, const Vector3d& _f, int _level) :
-            type(CORNER),
-            frame(_frame),
-            px(_px),
-            f(_f),
-            level(_level),
-            point(NULL),
-            grad(1.0,0.0)
+        Feature(Frame* frame, const Vector2f& px, const Vector3f& direct, int level) :
+            mType(CORNER), mFrame(frame), mPx(px),
+            mDirect(direct), mLevel(level), mPoint(NULL)
         {}
 
-        Feature(Frame* _frame, Point* _point, const Vector2d& _px, const Vector3d& _f, int _level) :
-            type(CORNER),
-            frame(_frame),
-            px(_px),
-            f(_f),
-            level(_level),
-            point(_point),
-            grad(1.0,0.0)
+        Feature(Frame* frame, Point* point, const Vector2f& px, 
+                const Vector3f& direct, int level) :
+            mType(CORNER), mFrame(frame), mPx(px),
+            mDirect(direct), mLevel(level), mPoint(point)
         {}
-    }
+    };
 }

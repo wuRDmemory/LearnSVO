@@ -28,11 +28,13 @@ namespace mSVO {
         void reset();
 
     protected:
-        bool detectCorner(FramePtr frame, vector<cv::Point>& points, vector<Eigen::Vector3f>& ftrs);
+        bool detectCorner(FramePtr frame, vector<cv::Point2f>& points);
 
     private:
-        int mCellSize, mImWidth, mImHeight, mCellFtrNumber, mFtrNumber;
+        int mGridCell, mImWidth, mImHeight, mCellFtrNumber, mFtrNumber;
         vector<cv::Rect> mGridCellRoi;
+        vector<cv::Point2f> mFirstCorners;
+        FramePtr mRefFrame;
     };
 }
 

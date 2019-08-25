@@ -26,7 +26,7 @@ namespace mSVO {
         bool isKeyFrame;
         double mTimestamp;
 
-        CameraModel* mCammera;
+        CameraModel* mCamera;
         Sophus::SE3 mTwc;
 
         Features mObs;
@@ -67,5 +67,5 @@ namespace mSVO {
         }
     };
 
-    typedef FramePtr std::shared_ptr<Frame*>;
+    typedef Frame* FramePtr;
 }

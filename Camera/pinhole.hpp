@@ -26,6 +26,7 @@ namespace mvk {
 
             PinholeCamera(int width, int height, float fx, float fy, float cx, float cy, 
                             float d0=0, float d1=0, float d2=0, float d3=0, float d4=0);
+            PinholeCamera(const string config_file);
             virtual ~PinholeCamera();
             virtual Eigen::Vector3f cam2world(const float& x, const float& y) const;
             virtual Eigen::Vector3f cam2world(const Eigen::Vector2f& px) const;

@@ -46,4 +46,7 @@ namespace mvk {
             inline int width() const { return mWidth; }
             inline int height() const { return mHeight; }
     };
+
+
+    typedef CameraModel* CameraModelPtr;
 }

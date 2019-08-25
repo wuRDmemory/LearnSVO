@@ -16,6 +16,41 @@ namespace mvk {
         mD << d0, d1, d2, d3, d4;
     }
 
+    PinholeCamera::PinholeCamera(const string config_file) {
+        cv::FileStorage file(config_file, cv::FileStorage::READ);
+        if (!file.isOpened()) {
+            throw std::io_errc();
+        }
+
+        mWidth  = static_cast<float>(node["image_width"]);
+        mHeight = static_cast<float>(node["image_height"]);
+        CameraModel(mWidth, mHeight);
+
+        cv::FileNode node = file["instrinsc"];
+        { // instrinsc
+            float fx = static_cast<float>(node["fx"]);
+            float fy = static_cast<float>(node["fy"]);
+            float cx = static_cast<float>(node["cx"]);
+            float cy = static_cast<float>(node["cy"]);
+
+            float d0 = static_cast<float>(node["d0"]);
+            float d1 = static_cast<float>(node["d1"]);
+            float d2 = static_cast<float>(node["d2"]);
+            float d3 = static_cast<float>(node["d3"]);
+            float d4 = static_cast<float>(node["d4"]);
+
+            mCVK = (cv::Mat_<float>(3, 3) << fx, 0, cx, 0, fy, cy, 0, 0, 1);
+            mCVD = (cv::Mat_<float>(1, 5) << d0, d1, d2, d3, d4);
+
+            mK << fx, 0, cx, 0, fy, cy, 0, 0, 1;
+            mD << d0, d1, d2, d3, d4;
+
+            mUseDistort = d0>1e-5;
+        }
+
+        mKInv = mK.inverse();
+    }
+
     PinholeCamera::~PinholeCamera() {
         ;
     }
