@@ -4,6 +4,7 @@
 #include <opencv2/opencv.hpp>
 #include <eigen3/Eigen/Dense>
 #include <eigen3/Eigen/Core>
+#include <glog/logging.h>
 #include "frame.hpp"
 
 namespace mSVO {

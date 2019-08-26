@@ -29,11 +29,31 @@ namespace mSVO {
         detectCorner(frameRef, mFirstCorners);
         
         if (mFirstCorners.size() < 200) {
-            printf(">>> [DEBUG] too few corner detect!!! %d\n", int(mFirstCorners.size()));
-            flush(cout);
+            LOG(ERROR) << ">>> Too few corner detected " << mFirstCorners.size();
             return FAILURE;
         }
         mRefFrame = frameRef;
+        return SUCCESS;
+    }
+
+    InitResult KltHomographyInit::addSecondFrame(FramePtr frameRef) {
+        vector<cv::Point2f> nextPoints;
+        vector<uchar> status;
+        vector<float> error;
+        cv::calcOpticalFlowPyrLK(mRefFrame->mImagePyr[0], frameRef->mImagePyr[0], mFirstCorners, nextPoints, status, error);
+
+        int j = 0;
+        for (int i = 0; i < status.size(); i++) if (status[i]) {
+            Vector2f px(nextPoints[i].x(), nextPoints[i].y());
+            mFirstCorners[j] = mFirstCorners[i];
+            nextPoints[j++]  = nextPoints[i];
+            mRefFrame->addFeature(new Feature(frameRef, px, 1));
+        }
+
+        // use fundamental matrix to shift some outlier
+        cv::findFundamentalMat(mFirstCorners, nextPoints, cv::Mat(), cv::FM_RANSAC, 3.0, 0.99, status);
+        
+
         return SUCCESS;
     }
 

@@ -21,10 +21,11 @@ namespace mSVO {
         UPDATE_FIRST  = 0, 
         UPDATE_SECOND = 1, 
         UPDATE_FRAME  = 2,
+        UPDATE_NO_FRAME = 3,
     };
 
     private:
-        FramePtr mNewFrame;
+        FramePtr mNewFrame, mRefFrame;
         CameraModelPtr mCameraModel;
         KltHomographyInit mInitialor;
         UPDATE_LEVEL updateLevel;
@@ -33,7 +34,9 @@ namespace mSVO {
         VO(const string config_file);
         ~VO();
 
-        bool addNewFrame(const cv::Mat& image, const double timestamp);
+        UPDATE_LEVEL addNewFrame(const cv::Mat& image, const double timestamp);
+        UPDATE_LEVEL processFirstFrame();
+        UPDATE_LEVEL processSencondFrame();
     };
 }
 

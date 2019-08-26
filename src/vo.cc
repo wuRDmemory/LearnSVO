@@ -31,6 +31,27 @@ namespace mSVO {
         }
         mNewFrame = new Frame(timestamp, mCameraModel, image);
         
+        if (updateLevel == UPDATE_FIRST) {
+            updateLevel = processFirstFrame();
+        } else if (updateLevel == UPDATE_SECOND) {
+            updateLevel = processSencondFrame();
+        } else {
+            updateLevel = processFrame();
+        }
+
         return true;
     }
+
+    UPDATE_LEVEL VO::processFirstFrame() { 
+        mNewFrame->mTwc = Sophus::SE3(Eigen::Matrix3d::Identity(), Eigen::Vector3d::Zero());
+        if (FAILURE == mInitialor->addFirstFrame(mNewFrame)) {
+            LOG(ERROR) << ">>> Faild to create first key frame!";
+            return UPDATE_NO_FRAME;
+        }
+        // TODO: add the frame to map
+        
+        return UPDATE_SECOND;
+    }
+
+    
 }
