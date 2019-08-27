@@ -4,7 +4,9 @@
 #include <opencv2/opencv.hpp>
 #include <eigen3/Eigen/Dense>
 #include <eigen3/Eigen/Core>
+#include <opencv/cxeigen.hpp>
 #include <glog/logging.h>
+#include "point.hpp"
 #include "frame.hpp"
 
 namespace mSVO {
@@ -30,6 +32,8 @@ namespace mSVO {
 
     protected:
         bool detectCorner(FramePtr frame, vector<cv::Point2f>& points);
+        int computeInliers(cv::Mat& R, cv::Mat& t, cv::Mat& K, vector<cv::Point2f>& pts1, vector<cv::Point2f>& pts2, 
+                        vector<uchar>& inliers, vector<float>& depth, float th);
 
     private:
         int mGridCell, mImWidth, mImHeight, mCellFtrNumber, mFtrNumber;

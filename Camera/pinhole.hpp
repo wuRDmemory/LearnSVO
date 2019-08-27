@@ -38,6 +38,8 @@ namespace mvk {
             virtual float errorMultiplier() const { return fabs(4.0*mfx*mfy); }
             inline const Eigen::Matrix3f& K() { return mK; }
             inline const Eigen::Matrix3f& K_inv() { return mKInv; }
+            inline const cv::Mat& cvK() { return mCVK; }
+
             inline float fx() { return mfx; };
             inline float fy() { return mfy; };
             inline float cx() { return mcx; };
