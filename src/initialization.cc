@@ -1,7 +1,5 @@
 #include "initialization.hpp"
-#include "feature.hpp"
-#include "frame.hpp"
-#include "utils.hpp"
+
 
 namespace mSVO {
     KltHomographyInit::KltHomographyInit() { 
@@ -43,69 +41,58 @@ namespace mSVO {
         cv::calcOpticalFlowPyrLK(mRefFrame->mImagePyr[0], frameRef->mImagePyr[0], mFirstCorners, nextPoints, status, error);
 
         int j = 0;
-        mvk::CameraModel* camera = frameRef->mCameraModel;
-        Features& ref_features = mRefFrame->mFeatures;
+        mvk::CameraModel* camera = frameRef->mCamera;
+        Features& ref_features = mRefFrame->mObs;
         vector<Vector3f> ref_obs(status.size());
         vector<Vector3f> cur_obs(status.size());
         for (int i = 0; i < status.size(); i++) 
         if (status[i]) {
-            Vector2f px(nextPoints[i].x(), nextPoints[i].y());
+            Vector2f pref(mFirstCorners[i].x, mFirstCorners[i].y);
+            Vector2f pcur(nextPoints[i].x,    nextPoints[i].y);
             mFirstCorners[j] = mFirstCorners[i];
-            ref_features[j]  = ref_features[i];
             nextPoints[j]    = nextPoints[i];
 
-            ref_obs[j] = camera->cam2world(ref_features[j]);
-            cur_obs[j] = camera->cam2world(nextPoints[j]);
+            ref_obs[j] = camera->cam2world(pref);
+            cur_obs[j] = camera->cam2world(pcur);
             j++;
         }
         ref_obs.resize(j);
         cur_obs.resize(j);
 
+        if (j <= 8) {
+            return FAILURE;
+        }
         // use fundamental matrix to shift some outlier
-        cv::Mat K = frameRef->mCamera->cvK();
-        cv::Mat F = cv::findFundamentalMat(mFirstCorners, nextPoints, cv::Mat(), cv::FM_RANSAC, 3.0, 0.99, status);
-        cv::Mat E = K.t()*F*K;
-        cv::Mat R1, R2, t;
+        cv::Mat& K = camera->cvK();
+        cv::Mat  F = cv::findFundamentalMat(mFirstCorners, nextPoints, cv::Mat(), cv::FM_RANSAC, 3.0, 0.99);
+        cv::Mat  E = K.t()*F*K;
+        cv::Mat  R1, R2, t;
         cv::decomposeEssentialMat(E, R1, R2, t);
-        Matrix3f ER1, ER2;
-        Vector3f Et1, Et2;
-        cv2eigen(R1, ER1);
-        cv2eigen(R2, ER2);
-        cv2eigen(t, Et1)
-        Et2 = -Et1;
+        // Matrix3f ER1, ER2;
+        // Vector3f Et1, Et2;
+        // cv2eigen(R1, ER1);
+        // cv2eigen(R2, ER2);
+        // cv2eigen(t, Et1);
+        // Et2 = -Et1;
         
 
         return SUCCESS;
     }
 
-    int KltHomographyInit::computeInliers(Eigen& R21, Eigen& t21, mvk::CameraModel* camera, vector<Vector3f>& pts1, vector<Vector3f>& pts2, 
+    int KltHomographyInit::computeInliers(Matrix3f& R21, Vector3f& t21, mvk::CameraModel* camera, vector<Vector3f>& pts1, vector<Vector3f>& pts2, \
                         vector<uchar>& inliers, vector<float>& depth, float th) {
         inliers.clear();
         inliers.resize(pts1.size(), 0);
         int N = inliers.size();
 
-        // auto triangle = [&](const cv::Point2f& p1, const cv::Point2f& p2) {
-        //     cv::Mat A(4, 4, CV_32F);
-        //     A.row(0) = p1.x*P1.row(2) - P1.row(0);
-        //     A.row(1) = p1.y*P1.row(2) - P1.row(1);
-        //     A.row(2) = p2.x*P2.row(2) - P2.row(0);
-        //     A.row(3) = p2.y*P2.row(2) - P2.row(1);
-
-        //     cv::Mat u, w, vt;
-        //     cv::SVDecomp(A, w, u, vt, cv::SVD::FULL_UV);
-
-        //     cv::Mat 3Dpoint = vt.row(3);
-        //     float x = 3Dpoint.at<float>(0), y = 3Dpoint.at<float>(1), z = 3Dpoint.at<float>(2), w = 3Dpoint.at<float>(3);
-        //     return Vector3f(x/w, y/w, z/w);
-        // };
-        Vector3f O1 = Vector3f::zero();
-        Vector3f O2 = -R21.translation()*t21;
+        Vector3f O1 = Vector3f::Zero();
+        Vector3f O2 = -R21.transpose()*t21;
 
         for (int i = 0; i < N; i++) {
             Vector3f p1 = pts1[i];
             Vector3f p2 = pts2[i];
 
-            float depth = mSVO::Point::calcuDepth(R21, t21, p1, p2);
+            float depth = calcuDepth(R21, t21, p1, p2);
             if (std::isnan(depth) or std::isinf(depth)) {
                 continue;
             }
@@ -114,7 +101,7 @@ namespace mSVO {
             Vector3f line1 = O1 - Pw;
             Vector3f line2 = O2 - Pw;
 
-            float theta = line1.cross(line2)/(line1.norm()*line2.norm());
+            float theta = line1.dot(line2)/(line1.norm()*line2.norm());
             if (theta > 0.98) {
                 continue;
             }       

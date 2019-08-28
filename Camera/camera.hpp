@@ -7,6 +7,7 @@
 namespace mvk {
     using namespace std;
     using namespace Eigen;
+    using namespace cv;
 
     class CameraModel {
         protected:
@@ -17,6 +18,11 @@ namespace mvk {
             CameraModel(int width, int height): mWidth(width), mHeight(height) {}
 
             virtual ~CameraModel() {}
+
+            virtual void setSize(int width, int height) {
+                mWidth = width;
+                mHeight = height;
+            }
 
             virtual Vector3f
             cam2world(const float& x, const float& y) const = 0;
@@ -42,6 +48,10 @@ namespace mvk {
             project2d(const Vector3f& xyz) const {
                 return xyz.head<2>()/xyz(2);
             }
+
+            virtual Matrix3f& K() const = 0;
+            virtual Matrix3f& invK() const = 0;
+            virtual Mat& cvK() const = 0;
 
             inline int width() const { return mWidth; }
             inline int height() const { return mHeight; }

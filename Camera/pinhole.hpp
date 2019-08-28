@@ -19,14 +19,13 @@ namespace mvk {
             Eigen::Matrix<float, 1, 5> mD;
 
             cv::Mat mCVK, mCVD;
-
             bool mUseDistort;        
         public:
-            EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+            EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
 
             PinholeCamera(int width, int height, float fx, float fy, float cx, float cy, 
                             float d0=0, float d1=0, float d2=0, float d3=0, float d4=0);
-            PinholeCamera(const string config_file);
+            PinholeCamera(string config_file);
             virtual ~PinholeCamera();
             virtual Eigen::Vector3f cam2world(const float& x, const float& y) const;
             virtual Eigen::Vector3f cam2world(const Eigen::Vector2f& px) const;
@@ -36,19 +35,9 @@ namespace mvk {
             const Eigen::Vector2f focal_length() const { return Vector2f(mfx, mfy);}
             virtual float errorMultiplier2() const { return fabs(mfx);}
             virtual float errorMultiplier() const { return fabs(4.0*mfx*mfy); }
-            inline const Eigen::Matrix3f& K() { return mK; }
-            inline const Eigen::Matrix3f& K_inv() { return mKInv; }
-            inline const cv::Mat& cvK() { return mCVK; }
-
-            inline float fx() { return mfx; };
-            inline float fy() { return mfy; };
-            inline float cx() { return mcx; };
-            inline float cy() { return mcy; };
-            inline float d0() { return md0; };
-            inline float d1() { return md1; };
-            inline float d2() { return md2; };
-            inline float d3() { return md3; };
-            inline float d4() { return md4; };
+            virtual Eigen::Matrix3f& K() { return mK; }
+            virtual Eigen::Matrix3f& invK() { return mKInv; }
+            virtual cv::Mat& cvK() { return mCVK; }
 
             int initUnistortionMap();
             int undistortImage(const cv::Mat& raw, cv::Mat& rectified);

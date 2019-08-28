@@ -22,9 +22,9 @@ namespace mvk {
             throw std::io_errc();
         }
 
-        mWidth  = static_cast<float>(node["image_width"]);
-        mHeight = static_cast<float>(node["image_height"]);
-        CameraModel(mWidth, mHeight);
+        int width  = static_cast<float>(file["image_width"]);
+        int height = static_cast<float>(file["image_height"]);
+        this->setSize(width, height);
 
         cv::FileNode node = file["instrinsc"];
         { // instrinsc

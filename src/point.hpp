@@ -15,6 +15,6 @@ namespace mSVO {
     public:
         EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
 
-        static float calcuDepth(Matrix3f& Rcw, Vector3f& tcw, Vector3f& f1, Vector3f& f2);
-    }
+        
+    };
 }
