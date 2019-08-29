@@ -88,6 +88,10 @@ namespace mSVO {
         Vector3f O1 = Vector3f::Zero();
         Vector3f O2 = -R21.transpose()*t21;
 
+        Matrix3f R11 = Matrix3f::Identity();
+        Vector3f t11 = Vector3f::Zero();
+
+        float errorMulti = camera->errorMultiplier2();
         for (int i = 0; i < N; i++) {
             Vector3f p1 = pts1[i];
             Vector3f p2 = pts2[i];
@@ -106,7 +110,15 @@ namespace mSVO {
                 continue;
             }       
 
-            
+            float error1 = errorMulti * calculateError(R11, t11, Pw, p1);
+            if (error1 > th) {
+                continue;
+            }
+            float error2 = errorMulti * calculateError(R21, t21, Pw, p2);
+            if (error2 > th) {
+                continue;
+            }
+            inliers[i] = 1;
         }
     }
 
