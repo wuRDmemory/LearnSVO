@@ -17,10 +17,10 @@ namespace mSVO {
             ftr = NULL;
         });
 
-        float scale = 1.0f/Config::getPyramidFactor();
-        mImagePyr.resize(Config::getPyramidNumber());
+        float scale = 1.0f/Config::pyramidFactor();
+        mImagePyr.resize(Config::pyramidNumber());
         mImagePyr[0] = img.clone();
-        for (int i=1, N = Config::getPyramidNumber(); i<N; i++) {
+        for (int i=1, N = Config::pyramidNumber(); i<N; i++) {
             cv::resize(mImagePyr[i-1], mImagePyr[i], cv::Size(), scale, scale);
         }
     }

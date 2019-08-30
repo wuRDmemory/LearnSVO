@@ -16,7 +16,6 @@ namespace mSVO {
     using namespace Eigen;
     using namespace mvk;
 
-    class VO {
     enum UPDATE_LEVEL{
         UPDATE_FIRST  = 0, 
         UPDATE_SECOND = 1, 
@@ -24,10 +23,12 @@ namespace mSVO {
         UPDATE_NO_FRAME = 3,
     };
 
+    class VO {
+
     private:
         FramePtr mNewFrame, mRefFrame;
         CameraModelPtr mCameraModel;
-        KltHomographyInit mInitialor;
+        KltHomographyInitPtr mInitialor;
         UPDATE_LEVEL updateLevel;
 
     public:

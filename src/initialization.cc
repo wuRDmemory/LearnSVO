@@ -3,10 +3,10 @@
 
 namespace mSVO {
     KltHomographyInit::KltHomographyInit() { 
-        mGridCell  = Config::getGridCellNumber();
-        mImWidth   = Config::getImageWidth();
-        mImHeight  = Config::getImageHeight();
-        mFtrNumber = Config::getFeatureNumber();
+        mGridCell  = Config::gridCellNumber();
+        mImWidth   = Config::width();
+        mImHeight  = Config::height();
+        mFtrNumber = Config::featureNumber();
         mCellFtrNumber = mFtrNumber/mGridCell;
         // initial grid cell
         int row_step = mImHeight / mGridCell;

@@ -44,5 +44,7 @@ namespace mSVO {
         vector<cv::Point2f> mFirstCorners;
         FramePtr mRefFrame;
     };
+
+    typedef KltHomographyInit* KltHomographyInitPtr;
 }
 

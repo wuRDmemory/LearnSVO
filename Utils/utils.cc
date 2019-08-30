@@ -14,6 +14,20 @@ Config::Config(string configFile) {
     mPyramidNum  = static_cast<int>(file["pyr_num"]);
     mFeatureNum  = static_cast<int>(file["ftr_num"]);
     mPyramidFactor = static_cast<float>(file["pyr_factor"]);
+
+    cv::FileNode node = file["instrinsc"];
+    { // instrinsc
+        mfx = static_cast<float>(node["fx"]);
+        mfy = static_cast<float>(node["fy"]);
+        mcx = static_cast<float>(node["cx"]);
+        mcy = static_cast<float>(node["cy"]);
+
+        md0 = static_cast<float>(node["d0"]);
+        md1 = static_cast<float>(node["d1"]);
+        md2 = static_cast<float>(node["d2"]);
+        md3 = static_cast<float>(node["d3"]);
+        md4 = static_cast<float>(node["d4"]);
+    }
 }
 
 int loadDirectory(std::string dir_path, std::vector<std::string>& file_list, string pattern) {

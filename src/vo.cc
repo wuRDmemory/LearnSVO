@@ -4,7 +4,9 @@
 namespace mSVO {
     VO::VO(const string config_file): mNewFrame(NULL), mCameraModel(NULL), updateLevel(UPDATE_FIRST) {
         Config::initInstance(config_file);
-        mCameraModel = new PinholeCamera(config_file);
+        mCameraModel = new PinholeCamera(Config::width(), Config::height(), 
+                                         Config::fx(), Config::fy(), Config::cx(), Config::cy(), 
+                                         Config::d0(), Config::d1(), Config::d2(), Config::d3(), Config::d4());
         mInitialor   = new KltHomographyInit();
     }
 

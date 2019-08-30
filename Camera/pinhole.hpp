@@ -10,7 +10,7 @@ namespace mvk {
     using namespace std;
     using namespace Eigen;
 
-    class PinholeCamera: public CameraModel {
+    class PinholeCamera: virtual public CameraModel {
         protected:
             float mfx, mfy, mcx, mcy;
             float md0, md1, md2, md3, md4;
@@ -25,7 +25,6 @@ namespace mvk {
 
             PinholeCamera(int width, int height, float fx, float fy, float cx, float cy, 
                             float d0=0, float d1=0, float d2=0, float d3=0, float d4=0);
-            PinholeCamera(string config_file);
             virtual ~PinholeCamera();
             virtual Eigen::Vector3f cam2world(const float& x, const float& y) const;
             virtual Eigen::Vector3f cam2world(const Eigen::Vector2f& px) const;
@@ -35,9 +34,14 @@ namespace mvk {
             const Eigen::Vector2f focal_length() const { return Vector2f(mfx, mfy);}
             virtual float errorMultiplier2() const { return fabs(mfx);}
             virtual float errorMultiplier() const { return fabs(4.0*mfx*mfy); }
-            virtual Eigen::Matrix3f& K() { return mK; }
-            virtual Eigen::Matrix3f& invK() { return mKInv; }
-            virtual cv::Mat& cvK() { return mCVK; }
+
+            // virtual Matrix3f& K() const = 0;
+            // virtual Matrix3f& invK() const = 0;
+            // virtual Mat& cvK() const = 0;
+
+            Matrix3f& K() { return mK; }
+            Matrix3f& invK() { return mKInv; }
+            Mat& cvK() { return mCVK; }
 
             int initUnistortionMap();
             int undistortImage(const cv::Mat& raw, cv::Mat& rectified);
