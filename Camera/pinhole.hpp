@@ -39,9 +39,9 @@ namespace mvk {
             // virtual Matrix3f& invK() const = 0;
             // virtual Mat& cvK() const = 0;
 
-            Matrix3f& K() { return mK; }
-            Matrix3f& invK() { return mKInv; }
-            Mat& cvK() { return mCVK; }
+            const Matrix3f& K() const { return mK; }
+            const Matrix3f& invK() const { return mKInv; }
+            const Mat& cvK() const { return mCVK; }
 
             int initUnistortionMap();
             int undistortImage(const cv::Mat& raw, cv::Mat& rectified);

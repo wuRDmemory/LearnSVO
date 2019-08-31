@@ -46,9 +46,9 @@ namespace mvk {
                 return xyz.head<2>()/xyz(2);
             }
 
-            virtual Matrix3f& K() = 0;
-            virtual Matrix3f& invK() = 0;
-            virtual Mat& cvK() = 0;
+            virtual const Matrix3f& K() const = 0;
+            virtual const Matrix3f& invK() const = 0;
+            virtual const Mat& cvK() const = 0;
 
             virtual int width() const { return mWidth; }
             virtual int height() const { return mHeight; }

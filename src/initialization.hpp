@@ -1,12 +1,14 @@
 #pragma once
 
 #include <iostream>
+#include <algorithm>
 #include <opencv2/opencv.hpp>
 #include <eigen3/Eigen/Dense>
 #include <eigen3/Eigen/Core>
-// #include <opencv/cxeigen.hpp>
+#include <opencv/cxeigen.hpp>
 #include <glog/logging.h>
-#include "point.hpp"
+
+#include "landmark.hpp"
 #include "frame.hpp"
 #include "feature.hpp"
 #include "utils.hpp"

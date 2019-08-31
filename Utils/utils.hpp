@@ -14,10 +14,11 @@ using namespace std;
 class Config {
 private:
     int mPyramidNum, mFeatureNum;
-    int mImageWidth, mImageHeight;
-    int mGridCell;
-    float mPyramidFactor;
+    int mGridCell, mImageWidth, mImageHeight;
+    int mMinTrackThr, mMinInlierThr, mMinDispartyThr, mMinCornerThr;
+    float mPyramidFactor, mMinProjError;
     float mfx, mfy, mcx, mcy, md0, md1, md2, md3, md4; 
+    
     static Config* mInstance;
 
 private:
@@ -33,12 +34,18 @@ public:
 
     static Config* getInstance() { return mInstance; }
 
-    inline static int   pyramidNumber()  { return mInstance->mPyramidNum; }
-    inline static int   featureNumber()  { return mInstance->mFeatureNum; }
-    inline static int   gridCellNumber() { return mInstance->mGridCell;   }
     inline static int   width()  { return mInstance->mImageWidth;  }
     inline static int   height() { return mInstance->mImageHeight; }
+
+    inline static int   pyramidNumber()  { return mInstance->mPyramidNum;   }
+    inline static int   featureNumber()  { return mInstance->mFeatureNum;   }
+    inline static int   gridCellNumber() { return mInstance->mGridCell;     }
+    inline static int   minTrackThr()    { return mInstance->mMinTrackThr;  }
+    inline static int   minInlierThr()   { return mInstance->mMinInlierThr; }
+    inline static int   minDispartyThr() { return mInstance->mMinDispartyThr; }
+    inline static int   minCornerThr()   { return mInstance->mMinCornerThr; }
     inline static float pyramidFactor() { return mInstance->mPyramidFactor; }
+    inline static float minProjError()  { return mInstance->mMinProjError;  }
 
     inline static float fx() { return mInstance->mfx; }
     inline static float fy() { return mInstance->mfy; }

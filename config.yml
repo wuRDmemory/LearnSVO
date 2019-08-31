@@ -1,3 +1,5 @@
+%YAML:1.0
+
 # pyramid parameters
 pyr_num: 3
 pyr_factor: 2
@@ -7,3 +9,22 @@ grid_cell: 10
 image_width: 640
 image_height: 480
 ftr_num: 500
+
+# instrinsc
+instrinsc:
+  fx: 517.3
+  fy: 516.5
+  cx: 318.6
+  cy: 255.3
+  d0: 0.2624
+  d1: -0.9531
+  d2: -0.0054
+  d3: 0.0026
+  d4: 1.1633
+
+# some threshold
+min_proj_error: 3.0
+min_corner_thr: 200
+min_track_thr: 50
+min_inlier_thr: 50
+min_disparty_thr: 10

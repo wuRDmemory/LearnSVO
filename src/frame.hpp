@@ -20,10 +20,10 @@ namespace mSVO {
     typedef vector<cv::Mat> ImagePyr;
 
     class Frame {
-    public:
-        static int fID;
+    private:
+        static int id;
         int mID;
-        bool isKeyFrame;
+        bool mIsKeyFrame;
         double mTimestamp;
 
         CameraModel* mCamera;
@@ -34,22 +34,25 @@ namespace mSVO {
         
 
     public:
-        Frame(double timestamp, CameraModel* camera, cv::Mat& img);
+        Frame(double timestamp, CameraModel* camera, const cv::Mat& img);
         ~Frame();
 
         void initFrame(const cv::Mat& img);
         void addFeature(Feature* feature);
 
-        inline void setKeyFrame() { isKeyFrame = true; }
-        inline bool getKeyFrame() { return isKeyFrame; }
-        inline int getObs() { return mObs.size(); }
-        inline Eigen::Vector3f getPose() { return mTwc.translation().cast<float>(); }
+        inline void setKeyFrame() { mIsKeyFrame = true; }
 
-        inline static void jacobian_xyz2uv(Vector3d& xyz_in_f, Matrix<double,2,6>& J) {
-            const double x = xyz_in_f[0];
-            const double y = xyz_in_f[1];
-            const double z_inv = 1./xyz_in_f[2];
-            const double z_inv_2 = z_inv*z_inv;
+        inline bool isKeyFrame() { return mIsKeyFrame; }
+        inline CameraModel* camera() { return mCamera; }
+        inline ImagePyr& imagePyr() { return mImagePyr; }
+        inline Features& obs() { return mObs; }
+        inline Sophus::SE3& pose() { return mTwc; }
+
+        inline static void jacobian_xyz2uv(Vector3f& xyz_in_f, Matrix<float,2,6>& J) {
+            const float x = xyz_in_f[0];
+            const float y = xyz_in_f[1];
+            const float z_inv = 1.0/xyz_in_f[2];
+            const float z_inv_2 = z_inv*z_inv;
 
             J(0,0) = -z_inv;              // -1/z
             J(0,1) = 0.0;                 // 0

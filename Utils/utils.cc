@@ -13,7 +13,14 @@ Config::Config(string configFile) {
     mImageHeight = static_cast<int>(file["image_height"]);
     mPyramidNum  = static_cast<int>(file["pyr_num"]);
     mFeatureNum  = static_cast<int>(file["ftr_num"]);
+
+    mMinTrackThr  = static_cast<int>(file["min_track_thr"]);
+    mMinInlierThr = static_cast<int>(file["min_inlier_thr"]);
+    mMinCornerThr = static_cast<int>(file["min_corner_thr"]);
+    mMinDispartyThr = static_cast<int>(file["min_disparty_thr"]);
+
     mPyramidFactor = static_cast<float>(file["pyr_factor"]);
+    mMinProjError  = static_cast<float>(file["min_proj_error"]);
 
     cv::FileNode node = file["instrinsc"];
     { // instrinsc

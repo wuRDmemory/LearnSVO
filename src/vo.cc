@@ -24,7 +24,7 @@ namespace mSVO {
         updateLevel = UPDATE_FIRST;
     }
 
-    bool VO::addNewFrame(const cv::Mat& image, const double timestamp) {
+    UPDATE_LEVEL VO::addNewFrame(const cv::Mat& image, const double timestamp) {
         if (timestamp < -1) {
             throw std::runtime_error("timestamp is invalid");
         }
@@ -38,16 +38,16 @@ namespace mSVO {
         } else if (updateLevel == UPDATE_SECOND) {
             updateLevel = processSencondFrame();
         } else {
-            updateLevel = processFrame();
+            // updateLevel = processFrame();
         }
 
-        return true;
+        return updateLevel;
     }
 
     UPDATE_LEVEL VO::processFirstFrame() { 
-        mNewFrame->mTwc = Sophus::SE3(Eigen::Matrix3d::Identity(), Eigen::Vector3d::Zero());
+        mNewFrame->pose() = Sophus::SE3(Eigen::Matrix3d::Identity(), Eigen::Vector3d::Zero());
         if (FAILURE == mInitialor->addFirstFrame(mNewFrame)) {
-            LOG(ERROR) << ">>> Faild to create first key frame!";
+            LOG(ERROR) << ">>> [first frame] Faild to create first key frame!";
             return UPDATE_NO_FRAME;
         }
         // TODO: add the frame to map
@@ -55,5 +55,12 @@ namespace mSVO {
         return UPDATE_SECOND;
     }
 
+    UPDATE_LEVEL VO::processSencondFrame() {
+        if (FAILURE == mInitialor->addSecondFrame(mNewFrame)) {
+            LOG(ERROR) << ">>> [second frame] Faild to create first key frame!";
+            return UPDATE_NO_FRAME;
+        }
+        return UPDATE_NO_FRAME;
+    }
     
 }

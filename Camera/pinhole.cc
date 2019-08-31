@@ -35,7 +35,7 @@ namespace mvk {
             xyz[1] = px.y;
             xyz[2] = 1.0;
         }
-        return xyz.normalized();
+        return xyz;
     }
 
     Vector3f PinholeCamera::

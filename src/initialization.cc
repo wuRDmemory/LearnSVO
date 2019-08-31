@@ -7,7 +7,7 @@ namespace mSVO {
         mImWidth   = Config::width();
         mImHeight  = Config::height();
         mFtrNumber = Config::featureNumber();
-        mCellFtrNumber = mFtrNumber/mGridCell;
+        mCellFtrNumber = mFtrNumber/(mGridCell*mGridCell);
         // initial grid cell
         int row_step = mImHeight / mGridCell;
         int col_step = mImWidth  / mGridCell;
@@ -16,74 +16,126 @@ namespace mSVO {
             for (int j=0; j<mGridCell; j++) {
                 mGridCellRoi[i*mGridCell + j] = \
                     cv::Rect(cv::Point(i*col_step, j*row_step), 
-                             cv::Point(i*col_step, (j+1)*row_step));
+                             cv::Point((i+1)*col_step-1, (j+1)*row_step-1));
             }
         }
     }
 
-    InitResult KltHomographyInit::addFirstFrame(FramePtr frameRef) {
+    InitResult KltHomographyInit::addFirstFrame(FramePtr frame) {
         reset();
         mFirstCorners.clear();
-        detectCorner(frameRef, mFirstCorners);
+        detectCorner(frame, mFirstCorners);
         
-        if (mFirstCorners.size() < 200) {
-            LOG(ERROR) << ">>> Too few corner detected " << mFirstCorners.size();
+        LOG(INFO) << ">>> [first frame]corner detected " << mFirstCorners.size();
+        if (mFirstCorners.size() < Config::minCornerThr()) {
+            LOG(ERROR) << ">>> [first frame] Too few corner detected " << mFirstCorners.size();
             return FAILURE;
         }
-        mRefFrame = frameRef;
+        mRefFrame = frame;
         return SUCCESS;
     }
 
-    InitResult KltHomographyInit::addSecondFrame(FramePtr frameRef) {
-        vector<cv::Point2f> nextPoints;
+    InitResult KltHomographyInit::addSecondFrame(FramePtr frame) {
+        vector<cv::Point2f> nextCorners;
         vector<uchar> status;
         vector<float> error;
-        cv::calcOpticalFlowPyrLK(mRefFrame->mImagePyr[0], frameRef->mImagePyr[0], mFirstCorners, nextPoints, status, error);
+        cv::calcOpticalFlowPyrLK(mRefFrame->imagePyr()[0], frame->imagePyr()[0], mFirstCorners, nextCorners, status, error);
 
         int j = 0;
-        mvk::CameraModel* camera = frameRef->mCamera;
-        Features& ref_features = mRefFrame->mObs;
+        mvk::CameraModel* camera = frame->camera();
+        Features& ref_features = mRefFrame->obs();
         vector<Vector3f> ref_obs(status.size());
         vector<Vector3f> cur_obs(status.size());
         for (int i = 0; i < status.size(); i++) 
         if (status[i]) {
             Vector2f pref(mFirstCorners[i].x, mFirstCorners[i].y);
-            Vector2f pcur(nextPoints[i].x,    nextPoints[i].y);
+            Vector2f pcur(nextCorners[i].x,    nextCorners[i].y);
             mFirstCorners[j] = mFirstCorners[i];
-            nextPoints[j]    = nextPoints[i];
+            nextCorners[j]    = nextCorners[i];
 
             ref_obs[j] = camera->cam2world(pref);
             cur_obs[j] = camera->cam2world(pcur);
             j++;
         }
+        mFirstCorners.resize(j);
+        nextCorners.resize(j);
         ref_obs.resize(j);
         cur_obs.resize(j);
+        LOG(INFO) << ">>> [second frame] track key point : " << j;
 
-        if (j <= 8) {
+        if (j <= Config::minTrackThr()) {
+            LOG(ERROR) << ">>> [second frame] too few track points!!!";
             return FAILURE;
         }
         // use fundamental matrix to shift some outlier
-        cv::Mat& K = camera->cvK();
-        cv::Mat  F = cv::findFundamentalMat(mFirstCorners, nextPoints, cv::Mat(), cv::FM_RANSAC, 3.0, 0.99);
+        const cv::Mat& K = camera->cvK();
+        cv::Mat  mask;
+        cv::Mat  F = cv::findFundamentalMat(mFirstCorners, nextPoints, mask, cv::FM_RANSAC, 3.0, 0.99);
+        F.convertTo(F, CV_32F);
         cv::Mat  E = K.t()*F*K;
-        cv::Mat  R1, R2, t;
-        cv::decomposeEssentialMat(E, R1, R2, t);
-        // Matrix3f ER1, ER2;
-        // Vector3f Et1, Et2;
-        // cv2eigen(R1, ER1);
-        // cv2eigen(R2, ER2);
-        // cv2eigen(t, Et1);
-        // Et2 = -Et1;
+        cv::Mat  cvR1, cvR2, cvt;
+        LOG(INFO) << ">>> [second frame] find fundamental done!!! inliers " << cv::sum(mask)[0];
+        cv::decomposeEssentialMat(E, cvR1, cvR2, cvt);
+        // LOG(INFO) << ">>> [second frame] find essential done!!!";
+        Matrix3f ER1, ER2;
+        Vector3f Et1, Et2;
+        cv2eigen(cvR1, ER1); cv2eigen(cvR2, ER2);
+        cv2eigen(cvt,  Et1); Et2 = -Et1;
         
+        int best_inlier_cnt = INT_MIN, best_index = 0;
+        vector<uchar> best_inliers;
+        vector<float> best_depths;
+        Matrix3f list_R[] = {ER1, ER1, ER2, ER2};
+        Vector3f list_t[] = {Et1, Et2, Et1, Et2};
+        for (int i = 0; i <4; i++) {
+            vector<uchar> inliers;
+            vector<float> depths;
+            int good = computeInliers(list_R[i], list_t[i], camera, ref_obs, cur_obs, inliers, depths, Config::minProjError());
+            LOG(INFO) << ">>> [second frame] good match is " << good;
+            if (good > best_inlier_cnt) {
+                best_index = i;
+                best_inlier_cnt = good;
+                best_inliers = std::move(inliers);
+                best_depths  = std::move(depths);
+            }
+        }
 
+        LOG(INFO) << ">>> [second frame] good inlier number: " << best_inlier_cnt;
+        if (best_inlier_cnt < Config::minInlierThr()) {
+            LOG(INFO) << ">>> [second frame] too few inliers!!!";
+            return FAILURE;
+        }
+
+        auto* middle = best_depths.begin() + best_depths.size() / 2;
+        std::nth_element(best_depths.begin(), middle, best_depths.end());
+        float scale  = *middle;
+
+        Matrix3f R21 = list_R[best_index];
+        Vector3f t21 = list_t[best_index];
+        t21 = t21*scale/t21.norm();
+
+        // clean the ref and cur frame's features
+        mRefFrame->obs().clear(); frame->obs().clear();
+        for (int i = 0; i < best_inliers.size(); i++) 
+        if (best_inliers[i]) {
+            float depth = calcuDepth(R21, t21, ref_obs[i], cur_obs[i]);
+            if (depth <= 0) {
+                continue;
+            }
+            Vector3f xyz = ref_obs[i]*depth;
+            LandMarkPtr ldmk = new LandMark(xyz);
+
+            FeaturePtr ref_feature = new Feature();
+        }
         return SUCCESS;
     }
 
     int KltHomographyInit::computeInliers(Matrix3f& R21, Vector3f& t21, mvk::CameraModel* camera, vector<Vector3f>& pts1, vector<Vector3f>& pts2, \
-                        vector<uchar>& inliers, vector<float>& depth, float th) {
-        inliers.clear();
-        inliers.resize(pts1.size(), 0);
-        int N = inliers.size();
+                        vector<uchar>& inliers, vector<float>& depthes, float th) {
+        int N = pts1.size();
+        inliers.resize(N, 0);
+        depthes.resize(N, 0);
+        
 
         Vector3f O1 = Vector3f::Zero();
         Vector3f O2 = -R21.transpose()*t21;
@@ -91,13 +143,14 @@ namespace mSVO {
         Matrix3f R11 = Matrix3f::Identity();
         Vector3f t11 = Vector3f::Zero();
 
+        int good = 0;
         float errorMulti = camera->errorMultiplier2();
         for (int i = 0; i < N; i++) {
             Vector3f p1 = pts1[i];
             Vector3f p2 = pts2[i];
 
             float depth = calcuDepth(R21, t21, p1, p2);
-            if (std::isnan(depth) or std::isinf(depth)) {
+            if (depth <= 0 or std::isnan(depth) or std::isinf(depth)) {
                 continue;
             }
 
@@ -108,22 +161,25 @@ namespace mSVO {
             float theta = line1.dot(line2)/(line1.norm()*line2.norm());
             if (theta > 0.98) {
                 continue;
-            }       
+            }
 
-            float error1 = errorMulti * calculateError(R11, t11, Pw, p1);
+            float error1 = errorMulti * calcuProjError(R11, t11, Pw, p1);
             if (error1 > th) {
                 continue;
             }
-            float error2 = errorMulti * calculateError(R21, t21, Pw, p2);
+            float error2 = errorMulti * calcuProjError(R21, t21, Pw, p2);
             if (error2 > th) {
                 continue;
             }
             inliers[i] = 1;
+            depthes[i] = depth;
+            good += 1;
         }
+        return good;
     }
 
     bool KltHomographyInit::detectCorner(FramePtr frame, vector<cv::Point2f>& points) {
-        cv::Mat& image = frame->mImagePyr[0];
+        cv::Mat& image = frame->imagePyr()[0];
         for (int i=0; i<mGridCell; i++) {
             for (int j=0; j<mGridCell; j++) {
                 cv::Rect rroi = mGridCellRoi[i*mGridCell + j];
@@ -134,12 +190,22 @@ namespace mSVO {
                 vector<cv::Point2f> corner;
                 cv::goodFeaturesToTrack(roi, corner, mCellFtrNumber, 0.1, 10);
                 for (int i=0; i<corner.size(); i++) {
-                    points.emplace_back(corner[i]);
-                    const Vector2f px(corner[i].x, corner[i].y);
-                    frame->mObs.push_back(new Feature(frame, px, 1));
+                    Vector2f px(corner[i].x + tl.x, corner[i].y+tl.y);
+                    points.emplace_back(corner[i].x + tl.x, corner[i].y + tl.y);
+                    frame->addFeature(new Feature(frame, px, 1));
                 }
             }
         }
+        LOG(INFO) << ">>> detect corner done!!! all feature " << frame->obs().size();
+        #if 0
+        cv::Mat show = image.clone();
+        cv::cvtColor(show, show, cv::COLOR_GRAY2BGR);
+        for (int i = 0; i < points.size(); i++) {
+            cv::circle(show, cv::Point(int(points[i].x), int(points[i].y)), 2, cv::Scalar(0, 255, 0), 1);
+        }
+        cv::imshow("show image", show);
+        cv::waitKey();
+        #endif
         return true;
     }
 
