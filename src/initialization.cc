@@ -21,28 +21,28 @@ namespace mSVO {
         }
     }
 
-    InitResult KltHomographyInit::addFirstFrame(FramePtr frame) {
+    InitResult KltHomographyInit::addFirstFrame(FramePtr currFrame) {
         reset();
         mFirstCorners.clear();
-        detectCorner(frame, mFirstCorners);
+        detectCorner(currFrame, mFirstCorners);
         
         LOG(INFO) << ">>> [first frame]corner detected " << mFirstCorners.size();
         if (mFirstCorners.size() < Config::minCornerThr()) {
             LOG(ERROR) << ">>> [first frame] Too few corner detected " << mFirstCorners.size();
             return FAILURE;
         }
-        mRefFrame = frame;
+        mRefFrame = currFrame;
         return SUCCESS;
     }
 
-    InitResult KltHomographyInit::addSecondFrame(FramePtr frame) {
+    InitResult KltHomographyInit::addSecondFrame(FramePtr currFrame) {
         vector<cv::Point2f> nextCorners;
         vector<uchar> status;
         vector<float> error;
-        cv::calcOpticalFlowPyrLK(mRefFrame->imagePyr()[0], frame->imagePyr()[0], mFirstCorners, nextCorners, status, error);
+        cv::calcOpticalFlowPyrLK(mRefFrame->imagePyr()[0], currFrame->imagePyr()[0], mFirstCorners, nextCorners, status, error);
 
         int j = 0;
-        mvk::CameraModel* camera = frame->camera();
+        mvk::CameraModel* camera = currFrame->camera();
         Features& ref_features = mRefFrame->obs();
         vector<Vector3f> ref_obs(status.size());
         vector<Vector3f> cur_obs(status.size());
@@ -114,8 +114,11 @@ namespace mSVO {
         Vector3f t21 = list_t[best_index];
         t21 = t21*scale/t21.norm();
 
+        Matrix3d R12d = +R21.transpose().cast<double>();
+        Vector3d t12d = -R12d.dot(t21.cast<double>());
+        currFrame->pose() = Sophus::SE3(R12d, t12d);
         // clean the ref and cur frame's features
-        mRefFrame->obs().clear(); frame->obs().clear();
+        mRefFrame->obs().clear(); currFrame->obs().clear();
         for (int i = 0; i < best_inliers.size(); i++) 
         if (best_inliers[i]) {
             float depth = calcuDepth(R21, t21, ref_obs[i], cur_obs[i]);
@@ -125,7 +128,15 @@ namespace mSVO {
             Vector3f xyz = ref_obs[i]*depth;
             LandMarkPtr ldmk = new LandMark(xyz);
 
-            FeaturePtr ref_feature = new Feature();
+            Vector2f px1(ref_obs[i].x, ref_obs[i].y), px2(cur_obs[i].x, cur_obs[i].y);
+            FeaturePtr ref_feature = new Feature(mRefFrame, ldmk, px1, ref_obs[i], 1);
+            FeaturePtr cur_feature = new Feature(currFrame, ldmk, px2, cur_obs[i], 1);
+
+            mRefFrame->addFeature(ref_feature);
+            currFrame->addFeature(cur_feature);
+
+            ldmk->addFeature(ref_feature);
+            ldmk->addFeature(cur_feature);
         }
         return SUCCESS;
     }

@@ -4,6 +4,7 @@
 #include <opencv2/opencv.hpp>
 #include <eigen3/Eigen/Dense>
 #include <eigen3/Eigen/Core>
+#include "frame.hpp"
 
 namespace mSVO {
     using namespace std;
@@ -39,7 +40,7 @@ namespace mSVO {
             mDirect(direct), mLevel(level), mLandmark(NULL)
         {}
 
-        Feature(Frame* frame, Landmark* ldmk, const Vector2f& px, 
+        Feature(Frame* frame, LandMark* ldmk, const Vector2f& px, 
                 const Vector3f& direct, int level) :
             mType(CORNER), mFrame(frame), mPx(px),
             mDirect(direct), mLevel(level), mLandmark(ldmk)

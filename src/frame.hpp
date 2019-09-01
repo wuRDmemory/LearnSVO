@@ -16,6 +16,7 @@ using namespace mvk;
 
 namespace mSVO {
     class Feature;
+
     typedef list<Feature*> Features;
     typedef vector<cv::Mat> ImagePyr;
 
