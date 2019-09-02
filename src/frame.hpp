@@ -32,7 +32,6 @@ namespace mSVO {
 
         Features mObs;
         ImagePyr mImagePyr;
-        
 
     public:
         Frame(double timestamp, CameraModel* camera, const cv::Mat& img);
@@ -42,14 +41,14 @@ namespace mSVO {
         void addFeature(Feature* feature);
 
         inline void setKeyFrame() { mIsKeyFrame = true; }
-
         inline bool isKeyFrame() { return mIsKeyFrame; }
-        inline CameraModel* camera() { return mCamera; }
-        inline ImagePyr& imagePyr() { return mImagePyr; }
-        inline Features& obs() { return mObs; }
-        inline Sophus::SE3& pose() { return mTwc; }
+        
+        inline Features&    obs()      { return mObs; }
+        inline Sophus::SE3& pose()     { return mTwc; }
+        inline CameraModel* camera()   { return mCamera; }
+        inline ImagePyr&    imagePyr() { return mImagePyr; }
 
-        inline static void jacobian_xyz2uv(Vector3f& xyz_in_f, Matrix<float,2,6>& J) {
+        inline static void jacobian_uv2se3(Vector3f& xyz_in_f, Matrix<float,2,6>& J) {
             const float x = xyz_in_f[0];
             const float y = xyz_in_f[1];
             const float z_inv = 1.0/xyz_in_f[2];

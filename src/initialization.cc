@@ -12,12 +12,12 @@ namespace mSVO {
         int row_step = mImHeight / mGridCell;
         int col_step = mImWidth  / mGridCell;
         mGridCellRoi.resize(mGridCell*mGridCell);
-        for (int i=0; i<mGridCell; i++) {
-            for (int j=0; j<mGridCell; j++) {
-                mGridCellRoi[i*mGridCell + j] = \
-                    cv::Rect(cv::Point(i*col_step, j*row_step), 
-                             cv::Point((i+1)*col_step-1, (j+1)*row_step-1));
-            }
+        for (int i=0; i<mGridCell; i++)
+        for (int j=0; j<mGridCell; j++) 
+        {
+            mGridCellRoi[i*mGridCell + j] = \
+                cv::Rect(cv::Point(i*col_step, j*row_step), 
+                         cv::Point((i+1)*col_step-1, (j+1)*row_step-1));
         }
     }
 
@@ -42,6 +42,7 @@ namespace mSVO {
         cv::calcOpticalFlowPyrLK(mRefFrame->imagePyr()[0], currFrame->imagePyr()[0], mFirstCorners, nextCorners, status, error);
 
         int j = 0;
+        float distarties = 0.0f;
         mvk::CameraModel* camera = currFrame->camera();
         Features& ref_features = mRefFrame->obs();
         vector<Vector3f> ref_obs(status.size());
@@ -55,6 +56,8 @@ namespace mSVO {
 
             ref_obs[j] = camera->cam2world(pref);
             cur_obs[j] = camera->cam2world(pcur);
+
+            distarties += (pcur - pref).norm();
             j++;
         }
         mFirstCorners.resize(j);
@@ -63,6 +66,10 @@ namespace mSVO {
         cur_obs.resize(j);
         LOG(INFO) << ">>> [second frame] track key point : " << j;
 
+        if (distarties / (j+1) < Config::minDispartyThr()) {
+            LOG(INFO) << ">>> [second frame] too few disparty: " << distarties / (j+1);
+        }
+
         if (j <= Config::minTrackThr()) {
             LOG(ERROR) << ">>> [second frame] too few track points!!!";
             return FAILURE;
@@ -70,7 +77,7 @@ namespace mSVO {
         // use fundamental matrix to shift some outlier
         const cv::Mat& K = camera->cvK();
         cv::Mat  mask;
-        cv::Mat  F = cv::findFundamentalMat(mFirstCorners, nextPoints, mask, cv::FM_RANSAC, 3.0, 0.99);
+        cv::Mat  F = cv::findFundamentalMat(mFirstCorners, nextCorners, mask, cv::FM_RANSAC, 3.0, 0.99);
         F.convertTo(F, CV_32F);
         cv::Mat  E = K.t()*F*K;
         cv::Mat  cvR1, cvR2, cvt;
@@ -106,7 +113,7 @@ namespace mSVO {
             return FAILURE;
         }
 
-        auto* middle = best_depths.begin() + best_depths.size() / 2;
+        vector<float>::iterator middle = best_depths.begin() + (int)best_depths.size() / 2;
         std::nth_element(best_depths.begin(), middle, best_depths.end());
         float scale  = *middle;
 
@@ -114,9 +121,10 @@ namespace mSVO {
         Vector3f t21 = list_t[best_index];
         t21 = t21*scale/t21.norm();
 
-        Matrix3d R12d = +R21.transpose().cast<double>();
-        Vector3d t12d = -R12d.dot(t21.cast<double>());
-        currFrame->pose() = Sophus::SE3(R12d, t12d);
+        Matrix3d R12d = R21.cast<double>();
+        Vector3d t12d = t21.cast<double>();
+        Sophus::SE3 Tcw(R12d, t12d);
+        currFrame->pose() = Tcw.inverse();
         // clean the ref and cur frame's features
         mRefFrame->obs().clear(); currFrame->obs().clear();
         for (int i = 0; i < best_inliers.size(); i++) 
@@ -128,7 +136,7 @@ namespace mSVO {
             Vector3f xyz = ref_obs[i]*depth;
             LandMarkPtr ldmk = new LandMark(xyz);
 
-            Vector2f px1(ref_obs[i].x, ref_obs[i].y), px2(cur_obs[i].x, cur_obs[i].y);
+            Vector2f px1(ref_obs[i].x(), ref_obs[i].y()), px2(cur_obs[i].x(), cur_obs[i].y());
             FeaturePtr ref_feature = new Feature(mRefFrame, ldmk, px1, ref_obs[i], 1);
             FeaturePtr cur_feature = new Feature(currFrame, ldmk, px2, cur_obs[i], 1);
 
