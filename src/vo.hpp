@@ -4,11 +4,13 @@
 #include <opencv2/opencv.hpp>
 #include <eigen3/Eigen/Dense>
 #include <glog/logging.h>
+
 #include "frame.hpp"
 #include "initialization.hpp"
 #include "utils.hpp"
 #include "camera.hpp"
 #include "pinhole.hpp"
+#include "map.hpp"
 
 namespace mSVO {
     using namespace std;
@@ -24,13 +26,13 @@ namespace mSVO {
     };
 
     class VO {
-
     private:
+        MapPtr mLocalMap;
         FramePtr mNewFrame, mRefFrame;
         CameraModelPtr mCameraModel;
         KltHomographyInitPtr mInitialor;
         UPDATE_LEVEL updateLevel;
-
+    
     public:
         VO(const string config_file);
         ~VO();

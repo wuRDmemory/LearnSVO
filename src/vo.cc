@@ -8,6 +8,7 @@ namespace mSVO {
                                          Config::fx(), Config::fy(), Config::cx(), Config::cy(), 
                                          Config::d0(), Config::d1(), Config::d2(), Config::d3(), Config::d4());
         mInitialor   = new KltHomographyInit();
+        mLocalMap    = new Map(Config::keyFrameNum());
     }
 
     VO::~VO() { 
@@ -51,7 +52,8 @@ namespace mSVO {
             return UPDATE_NO_FRAME;
         }
         // TODO: add the frame to map
-        
+        mLocalMap->addKeyFrame(mNewFrame);
+        mRefFrame = mNewFrame;
         return UPDATE_SECOND;
     }
 
@@ -60,7 +62,10 @@ namespace mSVO {
             LOG(ERROR) << ">>> [second frame] Faild to create first key frame!";
             return UPDATE_NO_FRAME;
         }
-        return UPDATE_NO_FRAME;
+        // TODO: add the frame to map, update refer frame
+        mLocalMap->addKeyFrame(mNewFrame);
+        mRefFrame = mNewFrame;
+        return UPDATE_FRAME;
     }
     
 }

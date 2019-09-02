@@ -6,9 +6,9 @@ pyr_factor: 2
 
 # feature parameters
 grid_cell: 10
+ftr_num: 500
 image_width: 640
 image_height: 480
-ftr_num: 500
 
 # instrinsc
 instrinsc:
@@ -28,3 +28,6 @@ min_corner_thr: 200
 min_track_thr: 50
 min_inlier_thr: 50
 min_disparty_thr: 10
+
+# map parameter
+key_frame_size: 8

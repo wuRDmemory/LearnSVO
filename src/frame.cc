@@ -11,7 +11,7 @@ namespace mSVO {
 
     Frame::~Frame() {
         std::for_each(mObs.begin(), mObs.end(), [](Feature* ftr) {
-            delete ftr;
+            delete(ftr);
             ftr = NULL;
         });
     }

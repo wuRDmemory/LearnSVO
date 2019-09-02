@@ -16,6 +16,7 @@ private:
     int mPyramidNum, mFeatureNum;
     int mGridCell, mImageWidth, mImageHeight;
     int mMinTrackThr, mMinInlierThr, mMinDispartyThr, mMinCornerThr;
+    int mKeyFrameNum;
     float mPyramidFactor, mMinProjError;
     float mfx, mfy, mcx, mcy, md0, md1, md2, md3, md4; 
     
@@ -34,19 +35,27 @@ public:
 
     static Config* getInstance() { return mInstance; }
 
+    // pyraimd parameters
+    inline static int   pyramidNumber()  { return mInstance->mPyramidNum;   }
+    inline static float pyramidFactor()  { return mInstance->mPyramidFactor; }
+
+    // feature parameters
     inline static int   width()  { return mInstance->mImageWidth;  }
     inline static int   height() { return mInstance->mImageHeight; }
-
-    inline static int   pyramidNumber()  { return mInstance->mPyramidNum;   }
     inline static int   featureNumber()  { return mInstance->mFeatureNum;   }
     inline static int   gridCellNumber() { return mInstance->mGridCell;     }
+
+    // threshold
     inline static int   minTrackThr()    { return mInstance->mMinTrackThr;  }
     inline static int   minInlierThr()   { return mInstance->mMinInlierThr; }
     inline static int   minDispartyThr() { return mInstance->mMinDispartyThr; }
     inline static int   minCornerThr()   { return mInstance->mMinCornerThr; }
-    inline static float pyramidFactor() { return mInstance->mPyramidFactor; }
     inline static float minProjError()  { return mInstance->mMinProjError;  }
 
+    // map parameters
+    inline static int   keyFrameNum()   { return mInstance->mKeyFrameNum;   }
+
+    // instrinsc
     inline static float fx() { return mInstance->mfx; }
     inline static float fy() { return mInstance->mfy; }
     inline static float cx() { return mInstance->mcx; }
