@@ -7,6 +7,7 @@
 #include <ceres/ceres.h>
 
 #include "frame.hpp"
+#include "feature.hpp"
 
 namespace mSVO {
     using namespace std;
@@ -15,10 +16,13 @@ namespace mSVO {
 
     class ImageAlign {
     private:
-        int mIterCnt;
+        int mIterCnt, mMinLevel, mMaxLevel;
         static const int halfPatchSize = 2;
         static const int patchSize = halfPatchSize*2;
-        
+        static const int patchArea = patchSize*patchSize;
+
+        MatrixXf mRefPatchCache;
+        MatrixXf mJacobianCache;
 
     public:
         EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
@@ -27,6 +31,9 @@ namespace mSVO {
         ~ImageAlign();
 
         void run(FramePtr refFrame, FramePtr curFrame);
+    
+    protected:
+        void prepareData(FramePtr refFrame);
     };
 }
 
