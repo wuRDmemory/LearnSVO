@@ -20,7 +20,8 @@ namespace mSVO {
         static const int halfPatchSize = 2;
         static const int patchSize = halfPatchSize*2;
         static const int patchArea = patchSize*patchSize;
-
+        
+        vector<bool> mVisables;
         MatrixXf mRefPatchCache;
         MatrixXf mJacobianCache;
 

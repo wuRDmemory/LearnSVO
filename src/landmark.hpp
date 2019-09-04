@@ -27,7 +27,9 @@ namespace mSVO {
 
         void addFeature(FeaturePtr feature);
 
-        inline static void jacobian_xyz2uv(
+        inline Vector3f& xyz() { return mXYZ; }
+
+        inline static void jacobian_uv2xyz(
             const Vector3f& bear,
             const Matrix3f& Rcw,
             Matrix<float, 2, 3>& point_jac) {

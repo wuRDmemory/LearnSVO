@@ -52,7 +52,7 @@ namespace mSVO {
             Vector2f pref(mFirstCorners[i].x, mFirstCorners[i].y);
             Vector2f pcur(nextCorners[i].x,    nextCorners[i].y);
             mFirstCorners[j] = mFirstCorners[i];
-            nextCorners[j]    = nextCorners[i];
+            nextCorners[j]   = nextCorners[i];
 
             ref_obs[j] = camera->cam2world(pref);
             cur_obs[j] = camera->cam2world(pcur);
@@ -136,7 +136,7 @@ namespace mSVO {
             Vector3f xyz = ref_obs[i]*depth;
             LandMarkPtr ldmk = new LandMark(xyz);
 
-            Vector2f px1(ref_obs[i].x(), ref_obs[i].y()), px2(cur_obs[i].x(), cur_obs[i].y());
+            Vector2f px1(mFirstCorners[i].x, mFirstCorners[i].y), px2(nextCorners[i].x, nextCorners[i].y);
             FeaturePtr ref_feature = new Feature(mRefFrame, ldmk, px1, ref_obs[i], 1);
             FeaturePtr cur_feature = new Feature(currFrame, ldmk, px2, cur_obs[i], 1);
 
