@@ -25,6 +25,11 @@ namespace mSVO {
         MatrixXf mRefPatchCache;
         MatrixXf mJacobianCache;
 
+        Matrix<float, 6, 6> mH;
+        Matrix<float, 6, 1> mb;
+
+        Sophus::SE3 mTnewc_r;
+
     public:
         EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
 
@@ -34,7 +39,10 @@ namespace mSVO {
         void run(FramePtr refFrame, FramePtr curFrame);
     
     protected:
-        void prepareData(FramePtr refFrame);
+        void prepareData(FramePtr refFrame, int level);
+        void optimize(FramePtr refFrame, FramePtr curFrame, int level);
+        float computeError(FramePtr refFrame, FramePtr curFrame, int level);
+        float weightFunction(float res);
     };
 }
 
