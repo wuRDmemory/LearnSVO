@@ -28,7 +28,8 @@ namespace mSVO {
         Matrix<float, 6, 6> mH;
         Matrix<float, 6, 1> mb;
 
-        Sophus::SE3 mTnewc_r;
+        Sophus::SE3 mTc_r_new;
+        Sophus::SE3 mTc_r_old;
 
     public:
         EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
@@ -41,6 +42,8 @@ namespace mSVO {
     protected:
         void prepareData(FramePtr refFrame, int level);
         void optimize(FramePtr refFrame, FramePtr curFrame, int level);
+        
+        bool solve();
         float computeError(FramePtr refFrame, FramePtr curFrame, int level);
         float weightFunction(float res);
     };

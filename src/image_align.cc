@@ -137,7 +137,6 @@ namespace mSVO {
         for (int i=0; i<mIterCnt; i++) {
             mH.setZero();
             mb.setZero();
-
             computeError();
         }
     }
