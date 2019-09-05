@@ -71,7 +71,7 @@ namespace mSVO {
         }
     }
 
-    float ImageAlign::computeError(FramePtr refFrame, FramePtr curFrame, int level) { 
+    float ImageAlign::computeError(FramePtr refFrame, FramePtr curFrame, int level, bool linearSystem, bool useWeight) { 
         const int border  = halfPatchSize+1;
         cv::Mat& cur_img  = curFrame->imagePyr()[level];
         const int stride  = cur_img.cols;
@@ -91,7 +91,7 @@ namespace mSVO {
             float depth = (wxyz - pos).norm();
             Vector3f rxyz = (*begin)->mDirect*depth;
 
-            Vector3f cxyz = mTnewc_r*rxyz;
+            Vector3f cxyz = mTc_r_new*rxyz;
             Vector2f cuv  = cxyz.head<2>()/cxyz(2);
             Vector2f fPx  = cuv*scale;
             const float u_fref = fPx(0),             v_fref = fPx(1);
@@ -117,27 +117,61 @@ namespace mSVO {
                     float instensy = \
                         w_ref_tl*img_ptr[0] + w_ref_tr*img_ptr[1] + w_ref_bl*img_ptr[stride] + w_ref_br*img_ptr[stride+1];
                     float res = instensy - mRefPatchCache[feature_cnt, pixel_count];
-                    float weight = weightFunction(res/scale);
+                    float weight = 1.0f;
+                    if (useWeight) 
+                        weightFunction(res/scale);
+
                     chi2 += res*res*weight;
                     n_cnt ++;
-                    Matrix<float, 1, 6>& J = mJacobianCache.row(feature_cnt*patchArea + pixel_count);
-                    mH.noalias() += J.translation()*J*weight;
-                    mb.noalias() += J.translation()*e*weight;
+                    if (linearSystem) {
+                        Matrix<float, 1, 6>& J = mJacobianCache.row(feature_cnt*patchArea + pixel_count);
+                        mH.noalias() += J.translation()*J*weight;
+                        mb.noalias() += J.translation()*e*weight;
+                    }
                 }
             }
         }
         return chi2 / n_cnt;
     }
 
+    bool ImageAlign::solve(Sophus::SE3& new_model, Sophus::SE3& old_model) {
+        Matrix<float, 6, 1> delta_x = mH.ldlt().solve(mb);
+        if (isnan(delta_x[0]) or isinf(delta_x[0])) {
+            return false;
+        }
+        Matrix<double, 6, 1> ddelta_x = delta_x.cast<double>();
+        new_model = old_model*Sophus::SE3::exp(-ddelta_x); 
+        return true;
+    }
+
     void ImageAlign::optimize(FramePtr refFrame, FramePtr curFrame, int level) {
         // prepare data
         prepareData(refFrame, level);
         // main loop
-        float old_chi2 = 0;
+        float chi2_old = FLT_MAX;
+        float mu = 0, ro = 0;
         for (int i=0; i<mIterCnt; i++) {
             mH.setZero();
             mb.setZero();
-            computeError();
+            // calculate new chi2
+            chi2_old = computeError(refFrame, curFrame, level, true, true);
+            // LM
+            mH += (mH.diagonal()*mu).asDiagonal();
+            // solve 
+            if (solve(mTc_r_new, mTc_r_old)) {
+                // success
+                float chi2_new = computeError(refFrame, curFrame, level, false, true);
+                rho = chi2_new - chi2_old;
+            } else {
+                rho = -1;
+            }
+            // adjust the mu
+            if (rho > 0) {
+                
+                mTc_r_old = mTc_r_new;
+            } else {
+                mTc_r_new = mTc_r_old;
+            }
         }
     }
 }

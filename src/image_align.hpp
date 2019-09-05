@@ -43,8 +43,8 @@ namespace mSVO {
         void prepareData(FramePtr refFrame, int level);
         void optimize(FramePtr refFrame, FramePtr curFrame, int level);
         
-        bool solve();
-        float computeError(FramePtr refFrame, FramePtr curFrame, int level);
+        bool solve(Sophus::SE3& new_model, Sophus::SE3& old_model);
+        float computeError(FramePtr refFrame, FramePtr curFrame, int level, bool linearSystem, bool useWeight);
         float weightFunction(float res);
     };
 }
