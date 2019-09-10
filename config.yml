@@ -1,5 +1,8 @@
 %YAML:1.0
 
+#Debug
+verbose: 1
+
 # pyramid parameters
 pyr_num: 3
 pyr_factor: 2

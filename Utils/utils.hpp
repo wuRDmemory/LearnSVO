@@ -13,6 +13,7 @@ using namespace std;
 
 class Config {
 private:
+    int mVerbose;
     int mPyramidNum, mFeatureNum;
     int mGridCell, mImageWidth, mImageHeight;
     int mMinTrackThr, mMinInlierThr, mMinDispartyThr, mMinCornerThr;
@@ -34,6 +35,9 @@ public:
     }
 
     static Config* getInstance() { return mInstance; }
+
+    // verbose
+    inline static int   verbose()   { return mInstance->mVerbose; }
 
     // pyraimd parameters
     inline static int   pyramidNumber()  { return mInstance->mPyramidNum;   }

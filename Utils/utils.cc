@@ -8,6 +8,8 @@ Config::Config(string configFile) {
         throw std::io_errc();
     }
 
+    mVerbose     = static_cast<int>(file["verbose"]);
+
     mGridCell    = static_cast<int>(file["grid_cell"]);
     mImageWidth  = static_cast<int>(file["image_width"]);
     mImageHeight = static_cast<int>(file["image_height"]);

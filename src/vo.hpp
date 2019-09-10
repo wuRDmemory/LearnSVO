@@ -11,6 +11,7 @@
 #include "camera.hpp"
 #include "pinhole.hpp"
 #include "map.hpp"
+#include "image_align.hpp"
 
 namespace mSVO {
     using namespace std;
@@ -40,6 +41,7 @@ namespace mSVO {
         UPDATE_LEVEL addNewFrame(const cv::Mat& image, const double timestamp);
         UPDATE_LEVEL processFirstFrame();
         UPDATE_LEVEL processSencondFrame();
+        UPDATE_LEVEL processFrame();
     };
 }
 

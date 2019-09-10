@@ -1,4 +1,5 @@
 #include "image_align.hpp"
+#include "utils.hpp"
 
 namespace {
     // class ImageAlignCostFunction : public ceres::SizedCostFunction<1, 7> {
@@ -48,7 +49,8 @@ namespace mSVO {
         for (int level = mMinLevel; level <mMaxLevel; level++) {
             optimize(refFrame, curFrame, level);
         }
-        curFrame->pose() = mTc_r_new;
+        Sophus::SE3 Twc = refFrame->pose()*mTc_r_new.inverse();
+        curFrame->pose() = Twc;
     }
 
     void ImageAlign::prepareData(FramePtr refFrame, int level) {
@@ -98,7 +100,7 @@ namespace mSVO {
                 for (int j = 0; j < patchSize; j++, img_ptr++, pixel_count++) {
                     mRefPatchCache(feature_cnt, pixel_count) = \
                         w_ref_tl*img_ptr[0] + w_ref_tr*img_ptr[1] + w_ref_bl*img_ptr[stride] + w_ref_br*img_ptr[stride+1];
-                    
+
                     float dx = 0.5f*((w_ref_tl*img_ptr[1]  + w_ref_tr*img_ptr[2] + w_ref_bl*img_ptr[stride+1] + w_ref_br*img_ptr[stride+2])
                                     -(w_ref_tl*img_ptr[-1] + w_ref_tr*img_ptr[0] + w_ref_bl*img_ptr[stride-1] + w_ref_br*img_ptr[stride]));
                     float dy = 0.5f*((w_ref_tl*img_ptr[stride]  + w_ref_tr*img_ptr[1+stride] + w_ref_bl*img_ptr[stride*2] + w_ref_br*img_ptr[stride*2+1])
@@ -106,6 +108,9 @@ namespace mSVO {
 
                     mJacobianCache.row(feature_cnt*patchArea + pixel_count) = \
                         (dx*frame_jac.row(0)+dy*frame_jac.row(1))*fx;
+                    
+                    // if (Eigen::isnan(mJacobianCache.row(feature_cnt*patchArea + pixel_count))) 
+                    //     cout << "intense nan" << endl;
                 }
             }
         }
@@ -131,9 +136,10 @@ namespace mSVO {
             float depth = (wxyz - pos).norm();
             Vector3d rxyz = ((*begin)->mDirect*depth).cast<double>();
 
-            Vector3d cxyz = mTc_r_new*rxyz;
-            Vector2d cuv  = cxyz.head<2>()/cxyz(2);
-            Vector2d fPx  = cuv*scale;
+            Vector3d d_cxyz = mTc_r_new*rxyz;
+            Vector3f f_cxyz = d_cxyz.cast<float>();
+            Vector2f cuv    = curFrame->camera()->world2cam(f_cxyz);
+            Vector2f fPx    = cuv*scale;
             const float u_fref = fPx(0),             v_fref = fPx(1);
             const int   u_iref = (int)floor(fPx(0)), v_iref = (int)floor(fPx(1));
             // if the feature has no landmark or this point can not calculate the gradient of image
@@ -161,8 +167,11 @@ namespace mSVO {
                     if (useWeight) 
                         weight = weightFunction(res/scale);
 
+                    if (isnan(res))    cout << "res is nan" << endl;
+                    if (isnan(weight)) cout << "weight is nan" << endl;
+
                     chi2 += res*res*weight;
-                    mInliersCnt ++;
+                    mInliersCnt++;
                     if (linearSystem) {
                         // mJacobianCache.row()
                         Matrix<float, 1, 6> J(mJacobianCache.row(feature_cnt*patchArea + pixel_count));
@@ -172,7 +181,7 @@ namespace mSVO {
                 }
             }
         }
-        return chi2 / mInliersCnt;
+        return chi2 / (mInliersCnt+0.0001f);
     }
 
     bool ImageAlign::solve() {
@@ -197,7 +206,6 @@ namespace mSVO {
     }
 
     bool ImageAlign::reset() { 
-        chi2 = -1;
         mInliersCnt = 0; 
         mH.setZero();
         mb.setZero();
@@ -248,12 +256,18 @@ namespace mSVO {
                     mInliersCnt = 0;
                     // recalculate the F(x)
                     chi2_new = computeError(refFrame, curFrame, level, false, true);
-                    rho = chi2_new - chi2;
+                    rho = chi2 - chi2_new;
                 } else {
                     rho = -1;
                 }
                 // adjust the mu
                 if (rho > 0) {
+                    if (verbose) {
+                        LOG(INFO) << ">>> " << i    << " update success: old chi2: " << chi2 \
+                                  << "  new chi2: " << chi2_new \
+                                  << "  rho: "      << rho \
+                                  << "  inlier: "   << mInliersCnt; 
+                    }
                     // update old model
                     mTc_r_old = mTc_r_new;
                     // update chi2, chi2 mean the value of F(x)
@@ -264,6 +278,11 @@ namespace mSVO {
                     mu  *= max(1./3., min(1.-pow(2*rho-1,3), 2./3.));
                     v   = 2.;
                 } else {
+                    if (verbose) {
+                        LOG(INFO) << ">>> " << i << " update failed: old chi2: " << chi2 \
+                                  << "  new chi2: " << chi2_new \
+                                  << "  rho: " << rho;
+                    }
                     // reset the Tcr
                     mTc_r_new = mTc_r_old;
                     // update mu

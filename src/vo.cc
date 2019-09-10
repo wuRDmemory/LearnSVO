@@ -39,10 +39,11 @@ namespace mSVO {
         } else if (updateLevel == UPDATE_SECOND) {
             updateLevel = processSencondFrame();
         } else {
-            // updateLevel = processFrame();
+            updateLevel = processFrame();
         }
 
         return updateLevel;
+  
     }
 
     UPDATE_LEVEL VO::processFirstFrame() { 
@@ -58,12 +59,22 @@ namespace mSVO {
     }
 
     UPDATE_LEVEL VO::processSencondFrame() {
+        mNewFrame->pose() = mRefFrame->pose();
         if (FAILURE == mInitialor->addSecondFrame(mNewFrame)) {
             LOG(ERROR) << ">>> [second frame] Faild to create first key frame!";
             return UPDATE_NO_FRAME;
         }
         // TODO: add the frame to map, update refer frame
         mLocalMap->addKeyFrame(mNewFrame);
+        mRefFrame = mNewFrame;
+        return UPDATE_FRAME;
+    }
+
+    UPDATE_LEVEL VO::processFrame() {
+        mNewFrame->pose() = mRefFrame->pose();
+        ImageAlign imageAlign(0, Config::pyramidNumber(), 20);
+        imageAlign.run(mRefFrame, mNewFrame);
+
         mRefFrame = mNewFrame;
         return UPDATE_FRAME;
     }
