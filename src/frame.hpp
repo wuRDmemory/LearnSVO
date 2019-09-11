@@ -7,8 +7,8 @@
 #include <eigen3/Eigen/Dense>
 #include <eigen3/Eigen/Core>
 #include <opencv2/opencv.hpp>
-#include <sophus/se3.h>
-#include <sophus/so3.h>
+#include "sophus/se3.h"
+#include "sophus/so3.h"
 #include "camera.hpp"
 
 using namespace std;

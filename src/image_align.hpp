@@ -5,7 +5,6 @@
 #include <eigen3/Eigen/Dense>
 #include <eigen3/Eigen/Core>
 #include <glog/logging.h>
-#include <ceres/ceres.h>
 
 #include "frame.hpp"
 #include "feature.hpp"

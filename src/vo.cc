@@ -72,7 +72,7 @@ namespace mSVO {
 
     UPDATE_LEVEL VO::processFrame() {
         mNewFrame->pose() = mRefFrame->pose();
-        ImageAlign imageAlign(0, Config::pyramidNumber(), 20);
+        ImageAlign imageAlign(0, Config::pyramidNumber(), 10);
         imageAlign.run(mRefFrame, mNewFrame);
 
         mRefFrame = mNewFrame;

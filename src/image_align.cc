@@ -1,36 +1,6 @@
 #include "image_align.hpp"
 #include "utils.hpp"
 
-namespace {
-    // class ImageAlignCostFunction : public ceres::SizedCostFunction<1, 7> {
-    // public:
-    //     ImageAlignCostFunction(const double refInstense, const double curInstense, 
-    //                             Eigen::Matrix<double, 6, 1>& J) {
-    //         mRefBlock = refBlock;
-    //         mCurBlock = curBlock;
-    //         mXYZ = xyz;
-    //         mRefFrame = refFrame;
-    //     }
-    //     virtual ~ImageAlignCostFunction() {}
-    //     virtual bool Evaluate(double const* const* parameters,
-    //                             double* residuals,
-    //                             double** jacobians) const {
-    //         residuals[0] =  mCurInstense - mRefInstense;
-
-    //         // Compute the Jacobian if asked for.
-    //         if (jacobians != NULL){
-    //             if (jacobians[0] != NULL) {
-    //                 jacobians[0][0] = -1;
-    //             }
-    //         }
-    //         return true;
-    //     }
-    // private:
-    //     double mRefInstense, mCurInstense;
-    //     Eigen::MatrixXf mJ;
-    // };
-}
-
 namespace mSVO {
     #define INSIDEIMAGE(x, dx, min, max) ((x-dx) >= (min) and (x+dx) < (max))
 
@@ -46,10 +16,12 @@ namespace mSVO {
     void ImageAlign::run(FramePtr refFrame, FramePtr curFrame) {
         mTc_r_new = curFrame->pose().inverse()*refFrame->pose();
         mTc_r_old = mTc_r_new;
-        for (int level = mMinLevel; level <mMaxLevel; level++) {
+        LOG(INFO) << ">>> [ImageAlign] Begin Align image";
+        for (int level = mMaxLevel-1; level >= mMinLevel; level--) {
             optimize(refFrame, curFrame, level);
         }
         Sophus::SE3 Twc = refFrame->pose()*mTc_r_new.inverse();
+        LOG(INFO) << mTc_r_new;
         curFrame->pose() = Twc;
     }
 
@@ -69,6 +41,7 @@ namespace mSVO {
         int feature_cnt = 0;
         for (auto begin = features.begin(); begin != features.end(); ++begin, ++feature_cnt) {
             Vector2f fPx = (*begin)->mPx*scale;
+            // LOG(INFO) << ">>> " << fPx.transpose();
             const float u_fref = fPx(0),             v_fref = fPx(1);
             const int   u_iref = (int)floor(fPx(0)), v_iref = (int)floor(fPx(1));
             // if the feature has no landmark or this point can not calculate the gradient of image
@@ -107,7 +80,7 @@ namespace mSVO {
                                     -(w_ref_tl*img_ptr[-stride] + w_ref_tr*img_ptr[1-stride] + w_ref_bl*img_ptr[0]        + w_ref_br*img_ptr[1]));
 
                     mJacobianCache.row(feature_cnt*patchArea + pixel_count) = \
-                        (dx*frame_jac.row(0)+dy*frame_jac.row(1))*fx;
+                        (dx*frame_jac.row(0)+dy*frame_jac.row(1))*(fx*scale);
                     
                     // if (Eigen::isnan(mJacobianCache.row(feature_cnt*patchArea + pixel_count))) 
                     //     cout << "intense nan" << endl;
@@ -132,16 +105,16 @@ namespace mSVO {
             if (!mVisables[feature_cnt])
                 continue;
             
-            Vector3f& wxyz = (*begin)->mLandmark->xyz();
-            float depth = (wxyz - pos).norm();
-            Vector3d rxyz = ((*begin)->mDirect*depth).cast<double>();
+            Vector3f& wxyz    = (*begin)->mLandmark->xyz();
+            const float depth = (wxyz - pos).norm();
+            Vector3d rxyz     = ((*begin)->mDirect*depth).cast<double>();
 
             Vector3d d_cxyz = mTc_r_new*rxyz;
             Vector3f f_cxyz = d_cxyz.cast<float>();
             Vector2f cuv    = curFrame->camera()->world2cam(f_cxyz);
             Vector2f fPx    = cuv*scale;
             const float u_fref = fPx(0),             v_fref = fPx(1);
-            const int   u_iref = (int)floor(fPx(0)), v_iref = (int)floor(fPx(1));
+            const int   u_iref = (int)floorf(fPx(0)), v_iref = (int)floorf(fPx(1));
             // if the feature has no landmark or this point can not calculate the gradient of image
             if (!(*begin) or 
                 !INSIDEIMAGE(u_iref, border, 0, width) or 
@@ -165,10 +138,7 @@ namespace mSVO {
                     float res = instensy - mRefPatchCache(feature_cnt, pixel_count);
                     float weight = 1.0f;
                     if (useWeight) 
-                        weight = weightFunction(res/scale);
-
-                    if (isnan(res))    cout << "res is nan" << endl;
-                    if (isnan(weight)) cout << "weight is nan" << endl;
+                        weight = weightFunction(res);
 
                     chi2 += res*res*weight;
                     mInliersCnt++;
@@ -228,7 +198,7 @@ namespace mSVO {
         // main loop
         reset();
         chi2 = computeError(refFrame, curFrame, level, false, true);
-        float mu = -1, ro = 0, v = 2;
+        float mu = 0.1f, v = 2, rho = -1;
         if(mu < 0){
             double H_max_diag = 0;
             double tau = 1e-4;
@@ -238,7 +208,6 @@ namespace mSVO {
         }
 
         bool stop = false;
-        float rho = -1;
         for (int i=0; i<mIterCnt; i++) {
             int failCnt = 0;
             do {
@@ -266,7 +235,7 @@ namespace mSVO {
                         LOG(INFO) << ">>> " << i    << " update success: old chi2: " << chi2 \
                                   << "  new chi2: " << chi2_new \
                                   << "  rho: "      << rho \
-                                  << "  inlier: "   << mInliersCnt; 
+                                  << "  inlier: "   << mInliersCnt;
                     }
                     // update old model
                     mTc_r_old = mTc_r_new;
