@@ -6,7 +6,7 @@
 using namespace std;
 
 const string config_file = "/home/ubuntu/Projects/SLAM/LearnSVO/config.yml";
-const string dirPath = "/home/ubuntu/Datum/datum/SLAM/rgbd_dataset_freiburg1_xyz/rgb/";
+const string dirPath = "/media/ubuntu/DATASET/TUM/rgbd_dataset_freiburg1_xyz/rgbd_dataset_freiburg1_xyz/rgb/";
 const string pattern = ".png";
 
 int main(int argc, char* argv[]) {

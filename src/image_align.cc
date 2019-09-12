@@ -1,6 +1,8 @@
 #include "image_align.hpp"
 #include "utils.hpp"
 
+#define SHOW_MATCH 0
+
 namespace mSVO {
     #define INSIDEIMAGE(x, dx, min, max) ((x-dx) >= (min) and (x+dx) < (max))
 
@@ -34,6 +36,10 @@ namespace mSVO {
         const float fx    = refFrame->camera()->errorMultiplier2();
         Vector3f pos      = refFrame->pose().translation().cast<float>();
 
+#if SHOW_MATCH
+        mRefImage = ref_img.clone();
+#endif
+
         auto& features = refFrame->obs();
         mVisables.resize(features.size(), true);
         mRefPatchCache.resize(features.size(),   patchArea);
@@ -51,7 +57,6 @@ namespace mSVO {
                 mVisables[feature_cnt] = false;
                 continue;
             }
-            
             // calculate the pw in ref frame
             Vector3f& wxyz = (*begin)->mLandmark->xyz();
             float depth = (wxyz - pos).norm();
@@ -81,9 +86,6 @@ namespace mSVO {
 
                     mJacobianCache.row(feature_cnt*patchArea + pixel_count) = \
                         (dx*frame_jac.row(0)+dy*frame_jac.row(1))*(fx*scale);
-                    
-                    // if (Eigen::isnan(mJacobianCache.row(feature_cnt*patchArea + pixel_count))) 
-                    //     cout << "intense nan" << endl;
                 }
             }
         }
@@ -98,13 +100,22 @@ namespace mSVO {
         const float fx    = curFrame->camera()->errorMultiplier2();
         Vector3f pos      = refFrame->pose().translation().cast<float>();
 
+#if SHOW_MATCH
+        cv::Mat empty;
+        cv::RNG rng(time(NULL));
+        if (!linearSystem) {
+            cv::hconcat(mRefImage, cur_img, empty);
+            cv::cvtColor(empty, empty, cv::COLOR_GRAY2BGR);
+        }
+#endif
+
         auto& features = refFrame->obs();
         float chi2 = 0;
         int feature_cnt = 0;
         for (auto begin = features.begin(); begin != features.end(); ++begin, ++feature_cnt) {
             if (!mVisables[feature_cnt])
                 continue;
-            
+            Vector2f  rPx     = (*begin)->mPx*scale;
             Vector3f& wxyz    = (*begin)->mLandmark->xyz();
             const float depth = (wxyz - pos).norm();
             Vector3d rxyz     = ((*begin)->mDirect*depth).cast<double>();
@@ -122,6 +133,15 @@ namespace mSVO {
                 continue;
             }
 
+#if SHOW_MATCH
+            if (!linearSystem) {
+                int color_r = rng.uniform(0.0f, 1.0f)*255;
+                int color_g = rng.uniform(0.0f, 1.0f)*255;
+                int color_b = rng.uniform(0.0f, 1.0f)*255;
+                if (rng.uniform(0.0f, 1.0f) > 0.7)
+                    cv::line(empty, cv::Point(int(rPx(0)), int(rPx(1))), cv::Point(u_iref+stride, v_iref), cv::Scalar(color_r, color_g, color_b), 1);
+            }
+#endif
             const float subpix_u_ref = u_fref-u_iref;
             const float subpix_v_ref = v_fref-v_iref;
             const float w_ref_tl = (1.0-subpix_u_ref) * (1.0-subpix_v_ref);
@@ -143,7 +163,6 @@ namespace mSVO {
                     chi2 += res*res*weight;
                     mInliersCnt++;
                     if (linearSystem) {
-                        // mJacobianCache.row()
                         Matrix<float, 1, 6> J(mJacobianCache.row(feature_cnt*patchArea + pixel_count));
                         mH.noalias() += J.transpose()*J*weight;
                         mb.noalias() -= J.transpose()*res*weight;
@@ -151,6 +170,13 @@ namespace mSVO {
                 }
             }
         }
+
+#if SHOW_MATCH
+        if (!linearSystem) {
+            cv::imshow("feature track", empty);
+            cv::waitKey();
+        }
+#endif
         return chi2 / (mInliersCnt+0.0001f);
     }
 
@@ -203,7 +229,7 @@ namespace mSVO {
             double H_max_diag = 0;
             double tau = 1e-4;
             for(size_t j=0; j<mH.rows(); ++j)
-                H_max_diag = std::max(H_max_diag, (double)fabs(mH(j,j)));
+                H_max_diag = std::max(H_max_diag, (double)fabs(mH(j, j)));
             mu = tau*H_max_diag;
         }
 

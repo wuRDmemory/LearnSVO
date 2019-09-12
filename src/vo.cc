@@ -67,13 +67,19 @@ namespace mSVO {
         // TODO: add the frame to map, update refer frame
         mLocalMap->addKeyFrame(mNewFrame);
         mRefFrame = mNewFrame;
+
+        // TODO: reset the mInitialor
+        mInitialor->reset();
         return UPDATE_FRAME;
     }
 
     UPDATE_LEVEL VO::processFrame() {
         mNewFrame->pose() = mRefFrame->pose();
+        // image align
         ImageAlign imageAlign(0, Config::pyramidNumber(), 10);
         imageAlign.run(mRefFrame, mNewFrame);
+        // feature align
+        
 
         mRefFrame = mNewFrame;
         return UPDATE_FRAME;

@@ -6,6 +6,7 @@
 #include <eigen3/Eigen/Core>
 #include <glog/logging.h>
 
+#include "time.h"
 #include "frame.hpp"
 #include "feature.hpp"
 #include "landmark.hpp"
@@ -34,6 +35,8 @@ namespace mSVO {
 
         Sophus::SE3 mTc_r_new;
         Sophus::SE3 mTc_r_old;
+
+        cv::Mat mRefImage;
 
     public:
         EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
