@@ -1,6 +1,15 @@
 #include "feature_align.hpp"
 
 namespace mSVO {
+    Grid::Grid(int imWidth, int imHeight, int cellSize) {
+        rows = imHeight/cellSize;
+        cols = imWidth /cellSize;
+        step = cellSize;
+        cells.resize(rows*cols);
+    }
+};
+
+namespace mSVO {
     FeatureAlign::FeatureAlign(MapPtr map): mMap(map) {
         ;
     }

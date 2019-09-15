@@ -9,8 +9,32 @@
 
 #include "map.hpp"
 #include "frame.hpp"
+#include "landmark.hpp"
 
 namespace mSVO {
+    using namespace std;
+    using namespace cv;
+    using namespace Eigen;
+
+    struct CandidateFeature{
+        Vector2f px;
+        LandMarkPtr xyz;
+
+        CandidateFeature(Vector2f& px_, LandMarkPtr landmark_): px(px_), xyz(landmark_) {}
+    };
+
+    typedef list<CandidateFeature>  CandidateCell; 
+
+    struct Grid {
+        int step;
+        int rows;
+        int cols;
+        vector<CandidateCell> cells;
+
+        Grid(int imWidth, int imHeight, int cellSize);
+        ~Grid() {};
+    };
+    
     class FeatureAlign {
     private:
         static int halfPatchSize = 4;
