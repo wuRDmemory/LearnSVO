@@ -39,14 +39,16 @@ namespace mSVO {
 
         void initFrame(const cv::Mat& img);
         void addFeature(Feature* feature);
+        bool isVisible(Vector3f& xyz);
 
         inline void setKeyFrame() { mIsKeyFrame = true; }
         inline bool isKeyFrame() { return mIsKeyFrame; }
         
-        inline Features&    obs()      { return mObs; }
-        inline Sophus::SE3& pose()     { return mTwc; }
-        inline CameraModel* camera()   { return mCamera; }
-        inline ImagePyr&    imagePyr() { return mImagePyr; }
+        inline double       timestamp() { return mTimestamp; }
+        inline Features&    obs()       { return mObs; }
+        inline Sophus::SE3& pose()      { return mTwc; }
+        inline CameraModel* camera()    { return mCamera; }
+        inline ImagePyr&    imagePyr()  { return mImagePyr; }
 
         inline static void jacobian_uv2se3(Vector3f& xyz_in_f, Matrix<float,2,6>& J) {
             const float x = xyz_in_f[0];

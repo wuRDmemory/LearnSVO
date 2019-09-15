@@ -35,4 +35,9 @@ namespace mSVO {
     void Frame::addFeature(Feature* feature) {
         mObs.push_back(feature);
     }
+
+    bool Frame::isVisible(Vector3f& xyz) {
+        Vector2f cxy = mCamera->world2cam(xyz);
+        return cxy(0) >= 0 && cxyz(0) < Config::width() && cxy(1) >= 0 && cxyz(1) < Config::height();
+    }
 }

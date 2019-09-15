@@ -30,6 +30,8 @@ namespace mSVO {
         void addKeyFrame(FramePtr currFrame);
 
         list<FramePtr>& keyFrames() { return mKeyFrames; }
+
+        bool getCloseFrame(FramePtr frame, vector<pair<FramePtr, double> >& keyframes);
     };
 
     typedef Map* MapPtr;

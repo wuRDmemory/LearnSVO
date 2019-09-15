@@ -17,7 +17,8 @@ private:
     int mPyramidNum, mFeatureNum;
     int mGridCell, mImageWidth, mImageHeight;
     int mMinTrackThr, mMinInlierThr, mMinDispartyThr, mMinCornerThr;
-    int mKeyFrameNum;
+    int mKeyFrameNum, mCloseKeyFrameCnt;
+    float mProjectRatioThr;
     float mPyramidFactor, mMinProjError;
     float mfx, mfy, mcx, mcy, md0, md1, md2, md3, md4; 
     
@@ -57,7 +58,9 @@ public:
     inline static float minProjError()  { return mInstance->mMinProjError;  }
 
     // map parameters
-    inline static int   keyFrameNum()   { return mInstance->mKeyFrameNum;   }
+    inline static int   keyFrameNum()      { return mInstance->mKeyFrameNum;   }
+    inline static float projectRatioThr()  { return mInstance->mProjectRatioThr; }
+    inline static int   closeKeyFrameCnt() { return mInstance->mCloseKeyFrameCnt; }
 
     // instrinsc
     inline static float fx() { return mInstance->mfx; }
