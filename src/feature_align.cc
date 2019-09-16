@@ -31,8 +31,26 @@ namespace mSVO {
         // TODO: 2. project key frame's key points into current frame
         //          assign them to grid cell
         keyframe.resize(Config::closeKeyFrameCnt());
-        
+        for (int i = 0; i < keyframe.size(); ++i) {
+            auto& obs = keyframe[i].first->obs();
+            for (FeaturePtr& feature : obs) {
+                if (!feature->mLandmark) {
+                    continue;
+                }
+                // 
+
+            }
+        }
 
         // TODO: 3. 
+    }
+
+    bool FeatureAlign::projectToCurFrame(FramePtr curFrame, FeaturePtr feature) {
+        Vector2f cuv = curFrame->world2camera(feature->mLandmark->xyz());
+        if (curFrame->isVisible(cuv, patchSize)) {
+            
+            return true;
+        }
+        return false;
     }
 }

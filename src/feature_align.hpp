@@ -9,6 +9,7 @@
 
 #include "map.hpp"
 #include "frame.hpp"
+#include "feature.hpp"
 #include "landmark.hpp"
 
 namespace mSVO {
@@ -33,6 +34,12 @@ namespace mSVO {
 
         Grid(int imWidth, int imHeight, int cellSize);
         ~Grid() {};
+
+        void setCell(Vector2f& uv, LandMarkPtr landmark) {
+            const int x = uv(0) / step;
+            const int y = uv(1) / step;
+            cells[y*step + x].push_back(CandidateFeature(uv, landmark));
+        }
     };
     
     class FeatureAlign {
@@ -42,6 +49,7 @@ namespace mSVO {
         static int patchArea     = 64;
 
         MapPtr mMap;
+        Grid   mGrid;
 
     public:
         EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
@@ -50,6 +58,9 @@ namespace mSVO {
         ~FeatureAlign();
 
         bool reproject(FramePtr curFrame);
+
+    private:
+        bool projectToCurFrame(FramePtr curFrame, FeaturePtr feature);
     };
 }
 

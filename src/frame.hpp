@@ -28,7 +28,7 @@ namespace mSVO {
         double mTimestamp;
 
         CameraModel* mCamera;
-        Sophus::SE3 mTwc;
+        Sophus::SE3  mTwc, mTcw;
 
         Features mObs;
         ImagePyr mImagePyr;
@@ -39,7 +39,10 @@ namespace mSVO {
 
         void initFrame(const cv::Mat& img);
         void addFeature(Feature* feature);
-        bool isVisible(Vector3f& xyz);
+        bool isVisible(const Vector3f& xyz);
+        bool isVisible(const Vector2f& uv, int border);
+
+        Vector2f world2camera(const Vector3d& XYZ);
 
         inline void setKeyFrame() { mIsKeyFrame = true; }
         inline bool isKeyFrame() { return mIsKeyFrame; }
