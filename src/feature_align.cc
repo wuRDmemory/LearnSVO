@@ -11,11 +11,18 @@ namespace mSVO {
 
 namespace mSVO {
     FeatureAlign::FeatureAlign(MapPtr map): mMap(map) {
-        ;
+        if (mGrid) {
+            delete mGrid;
+            mGrid = NULL;
+        }
+        mGrid = new Grid(Config::width(), Config::height(), 30);
     }
 
     FeatureAlign::~FeatureAlign() {
-        ;
+        if (mGrid) {
+            delete mGrid;
+            mGrid = NULL;
+        }
     }
 
     bool FeatureAlign::reproject(FramePtr curFrame) {
@@ -42,7 +49,8 @@ namespace mSVO {
             }
         }
 
-        // TODO: 3. 
+        // TODO: 3. align features in each cells
+        alignGridCell(curFrame);
     }
 
     bool FeatureAlign::projectToCurFrame(FramePtr curFrame, FeaturePtr feature) {
@@ -52,5 +60,20 @@ namespace mSVO {
             return true;
         }
         return false;
+    }
+
+    bool FeatureAlign::alignGridCell(FramePtr curFrame) {
+        // for each cell
+        for (int i = 0; i < mGrid->cells.size(); i++) {
+            vector<CandidateCell>& cell = mGrid->cells[i];
+            for (int j = 0; j < cell.size(); j++) {
+                CandidateCell& candidate = cell[j];
+                for (auto begin = candidate.begin(), end = candidate.end(); begin != end; ++begin) {
+                    CandidateFeature* elem = begin;
+                    
+                }
+            }
+        }
+        return true;
     }
 }

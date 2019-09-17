@@ -49,7 +49,7 @@ namespace mSVO {
         static int patchArea     = 64;
 
         MapPtr mMap;
-        Grid   mGrid;
+        Grid*  mGrid;
 
     public:
         EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
@@ -61,6 +61,7 @@ namespace mSVO {
 
     private:
         bool projectToCurFrame(FramePtr curFrame, FeaturePtr feature);
+        bool alignGridCell(FramePtr curFrame);
     };
 }
 
