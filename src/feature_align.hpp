@@ -61,7 +61,8 @@ namespace mSVO {
 
     private:
         bool projectToCurFrame(FramePtr curFrame, FeaturePtr feature);
-        bool alignGridCell(FramePtr curFrame);
+        bool alignGridCell(FramePtr curFrame, CandidateCell& candidate);
+
     };
 }
 

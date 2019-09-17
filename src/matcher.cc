@@ -24,4 +24,12 @@ namespace mSVO {
         Vector2f dis = xy - xy_;
         return dis.norm();
     }
+
+    class Matcher {
+    public:
+        Matcher();
+        ~Matcher();
+
+        
+    };
 }

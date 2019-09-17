@@ -45,34 +45,34 @@ namespace mSVO {
                     continue;
                 }
                 // 
-
+                projectToCurFrame(curFrame, feature);
             }
         }
 
         // TODO: 3. align features in each cells
-        alignGridCell(curFrame);
-    }
-
-    bool FeatureAlign::projectToCurFrame(FramePtr curFrame, FeaturePtr feature) {
-        Vector2f cuv = curFrame->world2camera(feature->mLandmark->xyz());
-        if (curFrame->isVisible(cuv, patchSize)) {
-            
-            return true;
-        }
-        return false;
-    }
-
-    bool FeatureAlign::alignGridCell(FramePtr curFrame) {
         // for each cell
         for (int i = 0; i < mGrid->cells.size(); i++) {
             vector<CandidateCell>& cell = mGrid->cells[i];
             for (int j = 0; j < cell.size(); j++) {
                 CandidateCell& candidate = cell[j];
-                for (auto begin = candidate.begin(), end = candidate.end(); begin != end; ++begin) {
-                    CandidateFeature* elem = begin;
-                    
-                }
+                alignGridCell()
             }
+        }
+    }
+
+    bool FeatureAlign::projectToCurFrame(FramePtr curFrame, FeaturePtr feature) {
+        Vector2f cuv = curFrame->world2camera(feature->mLandmark->xyz());
+        if (curFrame->isVisible(cuv, patchSize)) {
+            mGrid->setCell(cuv, feature->mLandmark);
+            return true;
+        }
+        return false;
+    }
+
+    bool FeatureAlign::alignGridCell(FramePtr curFrame, CandidateCell& candidate) {
+        for (auto begin = candidate.begin(), end = candidate.end(); begin != end; ++begin) {
+            CandidateFeature* elem = begin;
+            
         }
         return true;
     }
