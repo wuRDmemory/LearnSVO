@@ -70,9 +70,25 @@ namespace mSVO {
     }
 
     bool FeatureAlign::alignGridCell(FramePtr curFrame, CandidateCell& candidate) {
-        for (auto begin = candidate.begin(), end = candidate.end(); begin != end; ++begin) {
-            CandidateFeature* elem = begin;
+        auto feature = candidate.begin();
+
+        while (feature != candidate.end()) {
             
+            if (feature->xyz->type == LandMark::DELETE) {
+                candidate.erase(feature);
+                continue;
+            }
+
+            candidate.erase(feature);
+            continue;
+        }
+        
+        for (auto begin = candidate.begin(), end = candidate.end(); begin != end; ++begin) {
+            CandidateFeature* feature = begin;
+            if (feature->mLandmark->type == LandMark::DELETE)
+                continue;
+            
+
         }
         return true;
     }

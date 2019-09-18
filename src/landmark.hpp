@@ -22,6 +22,13 @@ namespace mSVO {
     public:
         EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
 
+        enum LANDMARK_TYPR {
+            DELETE = 0,
+            CANDIDATE,
+            UNKNOWN,
+            GOOD,
+        };
+
         LandMark(Vector3f xyz);
         LandMark(Vector3f xyz, FeaturePtr feature);
 
@@ -43,6 +50,11 @@ namespace mSVO {
             point_jac(1, 2) = -bear[1] * z_inv_sq;
             point_jac = -point_jac * Rcw;
         }  
+
+    public:
+        int nProjectFrameFailed;
+        int nProjectFrameSuccess;
+        LANDMARK_TYPR type;
     };
 
     typedef LandMark* LandMarkPtr;
