@@ -33,6 +33,7 @@ namespace mSVO {
         LandMark(Vector3f xyz, FeaturePtr feature);
 
         void addFeature(FeaturePtr feature);
+        void findClosestObs(Vector3f& framePose, FeaturePtr feature) const;
 
         inline Vector3f& xyz() { return mXYZ; }
 

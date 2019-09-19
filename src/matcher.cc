@@ -25,11 +25,20 @@ namespace mSVO {
         return dis.norm();
     }
 
-    class Matcher {
-    public:
-        Matcher();
-        ~Matcher();
+    bool Matcher::findDirectMatch(FramePtr curFrame, LandMarkPtr landmark, Vector2f& px) {
+        // TODO: find the closest frame(feature)
+        FeaturePtr refFeature = NULL;
+        Vector3f   curFramePose = curFrame->twc();
+        landmark->findClosestObs(curFramePose, refFeature);
 
+        if (!refFeature) {
+            return false;
+        }
+
+        // TODO: calculate the warp matrix because the distance between them is very large
         
-    };
+
+        // TODO: align them
+        return true;
+    }
 }

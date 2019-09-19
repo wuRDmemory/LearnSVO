@@ -55,7 +55,7 @@ namespace mSVO {
             vector<CandidateCell>& cell = mGrid->cells[i];
             for (int j = 0; j < cell.size(); j++) {
                 CandidateCell& candidate = cell[j];
-                alignGridCell()
+                alignGridCell(curFrame, candidate);
             }
         }
     }
@@ -73,23 +73,38 @@ namespace mSVO {
         auto feature = candidate.begin();
 
         while (feature != candidate.end()) {
-            
-            if (feature->xyz->type == LandMark::DELETE) {
+            LandMarkPtr& ldmk = feature->xyz;
+            // check the landmark type
+            if (ldmk->type == LandMark::DELETE) {
                 candidate.erase(feature);
                 continue;
             }
 
-            candidate.erase(feature);
-            continue;
-        }
-        
-        for (auto begin = candidate.begin(), end = candidate.end(); begin != end; ++begin) {
-            CandidateFeature* feature = begin;
-            if (feature->mLandmark->type == LandMark::DELETE)
+            // feature alignment
+            if (!mMatcher->findDirectMatch(curFrame, ldmk, feature->px)) {
+                // if project failed, add the failed cnt
+                ldmk->nProjectFrameFailed++;
+                if (ldmk->type == LandMark::UNKNOWN and ldmk->nProjectFrameFailed > 10) {
+                    // TODO: delete the landmark
+                } else if (ldmk->type == LandMark::CANDIDATE and ldmk->nProjectFrameFailed > 20) {
+                    // TODO: delete the landmark from candidate list
+                }
+                candidate.erase(feature);
                 continue;
-            
+            }
 
+            ldmk->nProjectFrameSuccess++;
+            if (ldmk->type == LandMark::UNKNOWN and ldmk->nProjectFrameSuccess > 10) {
+                ldmk->type = LandMark::GOOD;
+            }
+
+            FeaturePtr newFeature = new Feature(curFrame, feature->px);
+            newFeature->mLandmark = ldmk;
+
+            curFrame->addFeature(newFeature);
+            candidate.erase(feature);
+            return true;
         }
-        return true;
+        return false;
     }
 }

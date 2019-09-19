@@ -11,6 +11,7 @@
 #include "frame.hpp"
 #include "feature.hpp"
 #include "landmark.hpp"
+#include "matcher.hpp"
 
 namespace mSVO {
     using namespace std;
@@ -48,8 +49,9 @@ namespace mSVO {
         static int patchSize     = 8;
         static int patchArea     = 64;
 
-        MapPtr mMap;
-        Grid*  mGrid;
+        MapPtr     mMap;
+        MatcherPtr mMatcher;
+        Grid*      mGrid;
 
     public:
         EIGEN_MAKE_ALIGNED_OPERATOR_NEW;

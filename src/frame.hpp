@@ -50,6 +50,7 @@ namespace mSVO {
         inline double       timestamp() { return mTimestamp; }
         inline Features&    obs()       { return mObs; }
         inline Sophus::SE3& pose()      { return mTwc; }
+        inline Vector3f     twc()       { return mTwc.translation().cast<float>(); }
         inline CameraModel* camera()    { return mCamera; }
         inline ImagePyr&    imagePyr()  { return mImagePyr; }
 
