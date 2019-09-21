@@ -9,6 +9,7 @@
 #include "utils.hpp"
 #include "frame.hpp"
 #include "landmark.hpp"
+#include "alignment.hpp"
 
 namespace mSVO {
     using namespace std;

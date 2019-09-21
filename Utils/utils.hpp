@@ -14,7 +14,7 @@ using namespace std;
 class Config {
 private:
     int mVerbose;
-    int mPyramidNum, mFeatureNum;
+    int mPyramidNum, mFeatureNum, mAlignIterCnt;
     int mGridCell, mImageWidth, mImageHeight;
     int mMinTrackThr, mMinInlierThr, mMinDispartyThr, mMinCornerThr;
     int mKeyFrameNum, mCloseKeyFrameCnt;
@@ -61,6 +61,9 @@ public:
     inline static int   keyFrameNum()      { return mInstance->mKeyFrameNum;   }
     inline static float projectRatioThr()  { return mInstance->mProjectRatioThr; }
     inline static int   closeKeyFrameCnt() { return mInstance->mCloseKeyFrameCnt; }
+
+    // feature alignment
+    inline static int   alignIterCnt()     { return mInstance->mAlignIterCnt; }
 
     // instrinsc
     inline static float fx() { return mInstance->mfx; }

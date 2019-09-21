@@ -34,3 +34,6 @@ min_disparty_thr: 10
 
 # map parameter
 key_frame_size: 8
+
+# feature align
+align_iter_cnt: 5

@@ -24,6 +24,8 @@ Config::Config(string configFile) {
     mPyramidFactor = static_cast<float>(file["pyr_factor"]);
     mMinProjError  = static_cast<float>(file["min_proj_error"]);
 
+    mAlignIterCnt  = static_cast<int>(file["align_iter_cnt"])
+
     cv::FileNode node = file["instrinsc"];
     { // instrinsc
         mfx = static_cast<float>(node["fx"]);

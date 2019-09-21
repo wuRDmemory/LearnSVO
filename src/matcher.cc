@@ -25,21 +25,6 @@ namespace mSVO {
         return dis.norm();
     }
 
-    float interpolateU8(cv::Mat& image, Vector2f& px) {
-        // compute interpolation weights
-        const int u_r = floor(px[0]);
-        const int v_r = floor(px[1]);
-        const float subpix_u = px[0]-u_r;
-        const float subpix_v = px[1]-v_r;
-        const float wTL = (1.0-subpix_u)*(1.0-subpix_v);
-        const float wTR = subpix_u * (1.0-subpix_v);
-        const float wBL = (1.0-subpix_u)*subpix_v;
-        const float wBR = subpix_u * subpix_v;
-
-        uint8_t* img_ptr = (uint8_t*)image.data  + v_r*image.cols + u_r;
-        return wTL*img_ptr[0] + wTR*img_ptr[1] + wBL*img_ptr[stride] + wBR*img_ptr[stride+1];
-    }
-
     bool Matcher::warpAffine(cv::Mat& image, Vector2f& px, Matrix2f& Acr, int level, int searchLevel, int halfPatchSize, uint8_t* patchPtr) {
         Matrix2f Arc = Acr.inverse();
         if (isnan(Arc(0, 0)) {
@@ -48,15 +33,14 @@ namespace mSVO {
         }
 
         Vector2f pyrPx = px/(1<<level);
-        for (int row = -halfPatchSize; row <= halfPatchSize; ++row) {
-            for (int col = -halfPatchSize; col <= halfPatchSize; ++col, patchPtr++) {
-                Vector2f pxPatch = Vector2f(col, row)*(1<<searchLevel);
-                Vector2f px(Arc*pxPatch + pyrPx);
-                if (px[0]<0 || px[1]<0 || px[0]>=image.cols-1 || px[1]>=image.rows-1) {
-                    *patchPtr = 0;
-                } else {
-                    *patchPtr = (uint8_t)interpolateU8(image, px);
-                }
+        for (int row = -halfPatchSize; row <= halfPatchSize; ++row)
+        for (int col = -halfPatchSize; col <= halfPatchSize; ++col, patchPtr++) {
+            Vector2f pxPatch = Vector2f(col, row)*(1<<searchLevel);
+            Vector2f px(Arc*pxPatch + pyrPx);
+            if (px[0]<0 || px[1]<0 || px[0]>=image.cols-1 || px[1]>=image.rows-1) {
+                *patchPtr = 0;
+            } else {
+                *patchPtr = (uint8_t)Alignment::interpolateU8(image, px);
             }
         }
         return true;
@@ -117,7 +101,6 @@ namespace mSVO {
         FeaturePtr refFeature = NULL;
         Vector3f   curFramePose = curFrame->twc();
         landmark->findClosestObs(curFramePose, refFeature);
-
         if (!refFeature) {
             return false;
         }
@@ -131,11 +114,16 @@ namespace mSVO {
             return false;
         }
         const bestSearchLevel = getBestSearchLevel(Acr, Config::pyramidNumber()-1);
-        warpAffine(refFeature->mFrame->imagePyr()[refFeature->mLevel], px, Acr, refFeature->mLevel, searchLevel, halfPatchSize+1, patchWithBorder);
+        warpAffine(refFeature->mFrame->imagePyr()[refFeature->mLevel], refFeature->mPx, Acr, refFeature->mLevel, searchLevel, halfPatchSize+1, patchWithBorder);
         createPatchFromBorderPatch(patch, patchWithBorder, patchSize);
 
         // TODO: align them
-        
+        Vector2f levelPx = px / (1<<bestSearchLevel);
+        if (!Alignment::align2D(curFrame->imagePyr()[bestSearchLevel], levelPx, Config::alignIterCnt(), patch, patchWithBorder)) {
+            return false;
+        }
+
+        px = levelPx * (1<<bestSearchLevel);
         return true;
     }
 }
