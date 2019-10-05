@@ -2,6 +2,7 @@
 
 #Debug
 verbose: 1
+eps: 0.000001
 
 # pyramid parameters
 pyr_num: 3
@@ -37,3 +38,20 @@ key_frame_size: 8
 
 # feature align
 align_iter_cnt: 5
+
+# pose optimize
+pose_optimize_iter_cnt: 10
+pose_optimize_inlier_thr: 20
+
+# struct optimize
+struct_optimize_iter_cnt: 10
+struct_optimize_point_cnt: 100
+
+# key frame select
+track_exmin_feature_thr: 25
+track_min_feature_thr: 50
+track_move_distance: 1.5
+
+# depth filter
+depth_filter_track_max_gap: 3
+depth_filter_iter_cnt: 8

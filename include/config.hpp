@@ -14,12 +14,32 @@ using namespace std;
 class Config {
 private:
     int mVerbose;
-    int mPyramidNum, mFeatureNum, mAlignIterCnt;
-    int mGridCell, mImageWidth, mImageHeight;
-    int mMinTrackThr, mMinInlierThr, mMinDispartyThr, mMinCornerThr;
-    int mKeyFrameNum, mCloseKeyFrameCnt;
+    int mPyramidNum;
+    int mFeatureNum;
+    int mAlignIterCnt;
+    int mGridCell;
+    int mImageWidth; 
+    int mImageHeight;
+    int mMinTrackThr;
+    int mMinInlierThr;
+    int mMinDispartyThr; 
+    int mMinCornerThr;
+    int mKeyFrameNum; 
+    int mCloseKeyFrameCnt; 
+    int mFeatureMatchMinThr;
+    int mPoseOptimizeIterCnt;
+    int mPoseOptimizeInlierThr;
+    int mStructOptimizeIterCnt;
+    int mStructOptimizePointCnt;
+    int mTrackExminFeatureThr;
+    int mTrackMinFeatureThr;
+    int mTrackMoveDistance;
+    int mDepthFilterTrackMaxGap;
+    int mDepthFilterIterCnt;
     float mProjectRatioThr;
-    float mPyramidFactor, mMinProjError;
+    float mPyramidFactor;
+    float mMinProjError;
+    float mEPS;
     float mfx, mfy, mcx, mcy, md0, md1, md2, md3, md4; 
     
     static Config* mInstance;
@@ -39,6 +59,7 @@ public:
 
     // verbose
     inline static int   verbose()   { return mInstance->mVerbose; }
+    inline static float EPS()       { return mInstance->mEPS;     }
 
     // pyraimd parameters
     inline static int   pyramidNumber()  { return mInstance->mPyramidNum;   }
@@ -58,12 +79,30 @@ public:
     inline static float minProjError()  { return mInstance->mMinProjError;  }
 
     // map parameters
-    inline static int   keyFrameNum()      { return mInstance->mKeyFrameNum;   }
-    inline static float projectRatioThr()  { return mInstance->mProjectRatioThr; }
+    inline static int   keyFrameNum()      { return mInstance->mKeyFrameNum;      }
+    inline static float projectRatioThr()  { return mInstance->mProjectRatioThr;  }
     inline static int   closeKeyFrameCnt() { return mInstance->mCloseKeyFrameCnt; }
 
     // feature alignment
-    inline static int   alignIterCnt()     { return mInstance->mAlignIterCnt; }
+    inline static int   alignIterCnt()       { return mInstance->mAlignIterCnt;       }
+    inline static int   featureMatchMinThr() { return mInstance->mFeatureMatchMinThr; }
+
+    // pose optimize
+    inline static int   poseOptimizeIterCnt()   { return mInstance->mPoseOptimizeIterCnt;   }
+    inline static int   poseOptimizeInlierThr() { return mInstance->mPoseOptimizeInlierThr; }
+
+    // struct optimize
+    inline static int   structOptimizeIterCnt()  { return mInstance->mStructOptimizeIterCnt;  }
+    inline static int   structOptimizePointCnt() { return mInstance->mStructOptimizePointCnt; }
+
+    // track parameter
+    inline static int   trackExminFeatureThr()   { return mInstance->mTrackExminFeatureThr; }
+    inline static int   trackMinFeatureCnt()     { return mInstance->mTrackMinFeatureThr;   }
+    inline static int   trackMoveDistance()      { return mInstance->mTrackMoveDistance;    }
+
+    // depth filter
+    inline static int   depthFilterTrackMaxGap() { return mInstance->mDepthFilterTrackMaxGap; }
+    inline static int   depthFilterIterCnt()     { return mInstance->mDepthFilterIterCnt;     }
 
     // instrinsc
     inline static float fx() { return mInstance->mfx; }

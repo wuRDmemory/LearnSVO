@@ -10,6 +10,7 @@
 #include "sophus/se3.h"
 #include "sophus/so3.h"
 #include "camera.hpp"
+#include "math_utils.hpp"
 
 using namespace std;
 using namespace mvk;
@@ -28,10 +29,13 @@ namespace mSVO {
         double mTimestamp;
 
         CameraModel* mCamera;
-        Sophus::SE3  mTwc, mTcw;
+        Quaternionf  mRwc;
+        Vector3f     mtwc;
 
         Features mObs;
         ImagePyr mImagePyr;
+
+        Matrix<float, 6, 6> mCovariance;
 
     public:
         Frame(double timestamp, CameraModel* camera, const cv::Mat& img);
@@ -42,17 +46,20 @@ namespace mSVO {
         bool isVisible(const Vector3f& xyz);
         bool isVisible(const Vector2f& uv, int border);
 
-        Vector2f world2camera(const Vector3d& XYZ);
+        Vector2f world2uv(const Vector3f& XYZ);
+        Vector3f world2camera(const Vector3f& XYZ);
 
         inline void setKeyFrame() { mIsKeyFrame = true; }
         inline bool isKeyFrame() { return mIsKeyFrame; }
         
-        inline double       timestamp() { return mTimestamp; }
+        inline int          ID()        { return mID;  }
         inline Features&    obs()       { return mObs; }
-        inline Sophus::SE3& pose()      { return mTwc; }
-        inline Vector3f     twc()       { return mTwc.translation().cast<float>(); }
+        inline Quaternionf& Rwc()       { return mRwc; }
+        inline Vector3f&    twc()       { return mtwc; }
+        inline double       timestamp() { return mTimestamp; }
         inline CameraModel* camera()    { return mCamera; }
         inline ImagePyr&    imagePyr()  { return mImagePyr; }
+        inline Matrix<float, 6, 6>&   covariance()  { return mCovariance; }
 
         inline static void jacobian_uv2se3(Vector3f& xyz_in_f, Matrix<float,2,6>& J) {
             const float x = xyz_in_f[0];
@@ -73,6 +80,22 @@ namespace mSVO {
             J(1,3) = 1.0 + y*J(1,2);      // 1.0 + y^2/z^2
             J(1,4) = -J(0,3);             // -x*y/z^2
             J(1,5) = -x*z_inv;            // x/z
+        }
+
+        inline static void jacobian_uv2se3New(Vector3f& xyz_c, Vector3f rxyz, Matrix<float,2,6>& J) {
+            const float x = xyz_c[0];
+            const float y = xyz_c[1];
+            const float z_inv  = 1.0/xyz_c[2];
+            const float z_inv2 = z_inv*z_inv;
+
+            Matrix<float, 2, 3> reduce;
+            reduce << -z_inv, 0, x*z_inv2, 0, -z_inv, y*z_inv2;
+
+            Matrix<float, 3, 6> j_pc_se3;
+            j_pc_se3.leftCols(3).setIdentity();
+            j_pc_se3.rightCols(3) = -symmetricMatrix(rxyz);
+
+            J = reduce*j_pc_se3;
         }
     };
 

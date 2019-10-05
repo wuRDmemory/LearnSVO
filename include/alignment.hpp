@@ -14,6 +14,6 @@ namespace mSVO {
     public:
         static float interpolateU8(cv::Mat& image, Vector2f& px);
         static bool align2D(cv::Mat& image, Vector2f& px, int iterCnt, int patchSize,
-                            const uint8_t* patch, const uint8_t* patchWithBorder);
+                            uint8_t* patch, uint8_t* patchWithBorder);
     };
 }

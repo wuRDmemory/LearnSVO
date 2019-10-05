@@ -120,11 +120,8 @@ namespace mSVO {
         Matrix3f R21 = list_R[best_index];
         Vector3f t21 = list_t[best_index];
         t21 = t21*scale/t21.norm();
-
-        Matrix3d R12d = R21.cast<double>();
-        Vector3d t12d = t21.cast<double>();
-        Sophus::SE3 Tcw(R12d, t12d);
-        currFrame->pose() = Tcw.inverse();
+        currFrame->Rwc() = Eigen::Quaternionf(R21).inverse();
+        currFrame->twc() = -R21.transpose()*t21;
         // clean the ref and cur frame's features
         mRefFrame->obs().clear(); currFrame->obs().clear();
         for (int i = 0; i < best_inliers.size(); i++) 

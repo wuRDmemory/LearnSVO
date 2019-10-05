@@ -1,5 +1,6 @@
 #include "frame.hpp"
-#include "utils.hpp"
+#include "config.hpp"
+#include "feature.hpp"
 
 namespace mSVO {
     int Frame::id = 0;
@@ -36,17 +37,21 @@ namespace mSVO {
         mObs.push_back(feature);
     }
 
-    bool Frame::isVisible(Vector3f& xyz) {
-        Vector2f cxy = mCamera->world2cam(xyz);
-        return cxy(0) >= 0 && cxyz(0) < mCamera->width() && cxy(1) >= 0 && cxyz(1) < mCamera->height();
+    bool Frame::isVisible(const Vector3f& xyz) {
+        Vector2f cxy = world2uv(xyz);
+        return cxy(0) >= 0 && cxy(0) < mCamera->width() && cxy(1) >= 0 && cxy(1) < mCamera->height();
     }
 
     bool Frame::isVisible(const Vector2f& uv, int border) {
         return uv(0) >= border && uv(0) <  mCamera->width()-border && uv(1) >= border && uv(1) <  mCamera->height()-border;
     }
 
-    Vector2f Frame::world2camera(const Vector3d& XYZ) {
-        Vector3f cxyz = (mTcw*XYZ).cast<float>();
+    Vector2f Frame::world2uv(const Vector3f& XYZ) {
+        Vector3f cxyz = mRwc.inverse()*(XYZ - mtwc);
         return mCamera->world2cam(cxyz);
+    }
+
+    Vector3f Frame::world2camera(const Vector3f& XYZ) {
+        return mRwc.inverse()*(XYZ - mtwc);
     }
 }

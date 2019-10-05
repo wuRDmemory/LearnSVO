@@ -34,7 +34,7 @@ namespace mSVO {
         vector<CandidateCell> cells;
 
         Grid(int imWidth, int imHeight, int cellSize);
-        ~Grid() {};
+        ~Grid();
 
         void setCell(Vector2f& uv, LandMarkPtr landmark) {
             const int x = uv(0) / step;
@@ -45,13 +45,12 @@ namespace mSVO {
     
     class FeatureAlign {
     private:
-        static int halfPatchSize = 4;
-        static int patchSize     = 8;
-        static int patchArea     = 64;
-
         MapPtr     mMap;
         MatcherPtr mMatcher;
         Grid*      mGrid;
+
+        int mMatches;
+        int mTrails;
 
     public:
         EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
@@ -61,10 +60,16 @@ namespace mSVO {
 
         bool reproject(FramePtr curFrame);
 
+        inline int matches()  { return mMatches; }
+        inline int trails()   { return mTrails;  }
+
     private:
+        bool resetGridCell();
         bool projectToCurFrame(FramePtr curFrame, FeaturePtr feature);
         bool alignGridCell(FramePtr curFrame, CandidateCell& candidate);
 
     };
+
+    typedef FeatureAlign* FeatureAlignPtr;
 }
 

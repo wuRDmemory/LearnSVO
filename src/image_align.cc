@@ -1,5 +1,5 @@
 #include "image_align.hpp"
-#include "utils.hpp"
+#include "config.hpp"
 
 #define SHOW_MATCH 0
 
@@ -16,25 +16,27 @@ namespace mSVO {
     }
 
     void ImageAlign::run(FramePtr refFrame, FramePtr curFrame) {
-        mTc_r_new = curFrame->pose().inverse()*refFrame->pose();
-        mTc_r_old = mTc_r_new;
+        mRc_r_new = curFrame->Rwc().inverse() * refFrame->Rwc();
+        mtc_r_new = curFrame->Rwc().inverse() * (refFrame->twc()-curFrame->twc());
+        mRc_r_old = mRc_r_new; mtc_r_old = mtc_r_new;
+
         LOG(INFO) << ">>> [ImageAlign] Begin Align image";
         for (int level = mMaxLevel-1; level >= mMinLevel; level--) {
             optimize(refFrame, curFrame, level);
         }
-        Sophus::SE3 Twc = refFrame->pose()*mTc_r_new.inverse();
-        LOG(INFO) << mTc_r_new;
-        curFrame->pose() = Twc;
+        curFrame->Rwc() = refFrame->Rwc()*mRc_r_new.inverse();
+        curFrame->twc() = refFrame->twc() - curFrame->Rwc()*mtc_r_new;
     }
 
     void ImageAlign::prepareData(FramePtr refFrame, int level) {
         const int border  = halfPatchSize+1;
         cv::Mat& ref_img  = refFrame->imagePyr()[level];
         const int stride  = ref_img.cols;
-        const int width   = ref_img.cols, height = ref_img.rows;
+        const int width   = ref_img.cols;
+        const int height  = ref_img.rows;
         const float scale = 1.0f/(1<<level);
         const float fx    = refFrame->camera()->errorMultiplier2();
-        Vector3f pos      = refFrame->pose().translation().cast<float>();
+        Vector3f& pos     = refFrame->twc();
 
 #if SHOW_MATCH
         mRefImage = ref_img.clone();
@@ -59,8 +61,8 @@ namespace mSVO {
             }
             // calculate the pw in ref frame
             Vector3f& wxyz = (*begin)->mLandmark->xyz();
-            float depth = (wxyz - pos).norm();
-            Vector3f cxyz = (*begin)->mDirect*depth;
+            float depth    = (wxyz - pos).norm();
+            Vector3f cxyz  = (*begin)->mDirect*depth;
 
             Matrix<float,2,6> frame_jac;
             Frame::jacobian_uv2se3(cxyz, frame_jac);
@@ -98,7 +100,7 @@ namespace mSVO {
         const int width   = cur_img.cols, height = cur_img.rows;
         const float scale = 1.0f/(1<<level);
         const float fx    = curFrame->camera()->errorMultiplier2();
-        Vector3f pos      = refFrame->pose().translation().cast<float>();
+        Vector3f& pos     = refFrame->twc();
 
 #if SHOW_MATCH
         cv::Mat empty;
@@ -118,10 +120,9 @@ namespace mSVO {
             Vector2f  rPx     = (*begin)->mPx*scale;
             Vector3f& wxyz    = (*begin)->mLandmark->xyz();
             const float depth = (wxyz - pos).norm();
-            Vector3d rxyz     = ((*begin)->mDirect*depth).cast<double>();
+            Vector3f rxyz     = (*begin)->mDirect*depth;
 
-            Vector3d d_cxyz = mTc_r_new*rxyz;
-            Vector3f f_cxyz = d_cxyz.cast<float>();
+            Vector3f f_cxyz = mRc_r_new*rxyz + mtc_r_new;
             Vector2f cuv    = curFrame->camera()->world2cam(f_cxyz);
             Vector2f fPx    = cuv*scale;
             const float u_fref = fPx(0),             v_fref = fPx(1);
@@ -188,9 +189,29 @@ namespace mSVO {
         return true;
     }
 
-    bool ImageAlign::update(Sophus::SE3& new_model, Sophus::SE3& old_model) {
-        Matrix<double, 6, 1> ddeltaX = mDeltaX.cast<double>();
-        new_model = old_model*Sophus::SE3::exp(-ddeltaX); 
+    bool ImageAlign::update(Quaternionf& new_Rcw, Vector3f& new_tcw, Quaternionf& old_Rcw, Vector3f& old_tcw) {
+        Vector3f deltaTheta = -mDeltaX.tail<3>();
+        Vector3f deltaTrans = -mDeltaX.head<3>();
+
+        Quaternionf deltaQ(1, deltaTheta(0)/2, deltaTheta(1)/2, deltaTheta(2)/2);
+
+        new_Rcw = old_Rcw * deltaQ;
+        new_tcw = old_tcw + deltaTrans;
+        new_Rcw.normalize();
+
+        // Matrix<double, 6, 1> ddelta = mDeltaX.cast<double>();
+        // Sophus::SE3 deltaT = Sophus::SE3::exp(-ddelta);
+        // Quaternionf deltaQ = deltaT.unit_quaternion().cast<float>();
+        // Vector3f    deltaTrans = deltaT.translation().cast<float>();
+
+        // new_Rcw = old_Rcw * deltaQ;
+        // new_tcw = old_tcw + old_Rcw * deltaTrans;
+
+        // Sophus::SE3 old_model(old_Rcw.cast<double>(), old_tcw.cast<double>());
+        // Sophus::SE3 new_model = old_model * Sophus::SE3::exp(-ddelta);
+        // new_Rcw = new_model.unit_quaternion().cast<float>();
+        // new_tcw = new_model.translation().cast<float>();
+        return true; 
     }
 
     float ImageAlign::maxLimit(Matrix<float, 6, 1>& x) {
@@ -246,7 +267,7 @@ namespace mSVO {
                 float chi2_new = 0;
                 
                 if (solve()) {
-                    update(mTc_r_new, mTc_r_old);
+                    update(mRc_r_new, mtc_r_new, mRc_r_old, mtc_r_old);
                     // success
                     mInliersCnt = 0;
                     // recalculate the F(x)
@@ -264,7 +285,9 @@ namespace mSVO {
                                   << "  inlier: "   << mInliersCnt;
                     }
                     // update old model
-                    mTc_r_old = mTc_r_new;
+                    // mTc_r_old = mTc_r_new;
+                    mRc_r_old = mRc_r_new;
+                    mtc_r_old = mtc_r_new;
                     // update chi2, chi2 mean the value of F(x)
                     chi2 = chi2_new;
                     // stop condition
@@ -279,7 +302,8 @@ namespace mSVO {
                                   << "  rho: " << rho;
                     }
                     // reset the Tcr
-                    mTc_r_new = mTc_r_old;
+                    mRc_r_new = mRc_r_old;
+                    mtc_r_new = mtc_r_old;
                     // update mu
                     mu = mu*v;
                     v  = v*2;

@@ -1,12 +1,12 @@
 #include <opencv2/opencv.hpp>
 #include <glog/logging.h>
-#include "utils.hpp"
+#include "config.hpp"
 #include "vo.hpp"
 
 using namespace std;
 
 const string config_file = "/home/ubuntu/Projects/SLAM/LearnSVO/config.yml";
-const string dirPath = "/media/ubuntu/DATASET/TUM/rgbd_dataset_freiburg1_xyz/rgbd_dataset_freiburg1_xyz/rgb/";
+const string dirPath = "/home/ubuntu/data/rgbd_dataset_freiburg1_xyz/rgb/";
 const string pattern = ".png";
 
 int main(int argc, char* argv[]) {

@@ -1,4 +1,4 @@
-#include "utils.hpp"
+#include "config.hpp"
 
 Config* Config::mInstance = NULL;
 
@@ -9,6 +9,7 @@ Config::Config(string configFile) {
     }
 
     mVerbose     = static_cast<int>(file["verbose"]);
+    mEPS         = static_cast<float>(file["eps"]);
 
     mGridCell    = static_cast<int>(file["grid_cell"]);
     mImageWidth  = static_cast<int>(file["image_width"]);
@@ -24,7 +25,20 @@ Config::Config(string configFile) {
     mPyramidFactor = static_cast<float>(file["pyr_factor"]);
     mMinProjError  = static_cast<float>(file["min_proj_error"]);
 
-    mAlignIterCnt  = static_cast<int>(file["align_iter_cnt"])
+    mAlignIterCnt  = static_cast<int>(file["align_iter_cnt"]);
+
+    mPoseOptimizeIterCnt   = static_cast<int>(file["pose_optimize_iter_cnt"]);
+    mPoseOptimizeInlierThr = static_cast<int>(file["pose_optimize_inlier_thr"]);
+
+    mStructOptimizeIterCnt   = static_cast<int>(file["struct_optimize_iter_cnt"]);
+    mStructOptimizePointCnt  = static_cast<int>(file["struct_optimize_point_cnt"]);
+
+    mTrackExminFeatureThr  = static_cast<int>(file["track_exmin_feature_thr"]);
+    mTrackMinFeatureThr    = static_cast<int>(file["track_min_feature_thr"]);
+    mTrackMoveDistance     = static_cast<int>(file["track_move_distance"]);
+
+    mDepthFilterTrackMaxGap = static_cast<int>(file["depth_filter_track_max_gap"]);
+    mDepthFilterIterCnt     = static_cast<int>(file["depth_filter_iter_cnt"]);
 
     cv::FileNode node = file["instrinsc"];
     { // instrinsc

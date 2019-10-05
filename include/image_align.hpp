@@ -33,8 +33,8 @@ namespace mSVO {
         Matrix<float, 6, 1> mb;
         Matrix<float, 6, 1> mDeltaX;
 
-        Sophus::SE3 mTc_r_new;
-        Sophus::SE3 mTc_r_old;
+        Quaternionf mRc_r_new, mRc_r_old;
+        Vector3f    mtc_r_new, mtc_r_old;
 
         cv::Mat mRefImage;
 
@@ -52,7 +52,7 @@ namespace mSVO {
         
         bool solve();
         bool reset();
-        bool update(Sophus::SE3& new_model, Sophus::SE3& old_model);
+        bool update(Quaternionf& new_Rcw, Vector3f& new_tcw, Quaternionf& old_Rcw, Vector3f& old_tcw);
         float maxLimit(Matrix<float, 6, 1>& x);
         float computeError(FramePtr refFrame, FramePtr curFrame, int level, bool linearSystem, bool useWeight);
         float weightFunction(float res);

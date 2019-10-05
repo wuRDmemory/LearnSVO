@@ -6,7 +6,7 @@
 #include <eigen3/Eigen/Core>
 #include <glog/logging.h>
 
-#include "utils.hpp"
+#include "config.hpp"
 #include "frame.hpp"
 #include "landmark.hpp"
 #include "alignment.hpp"
@@ -21,22 +21,25 @@ namespace mSVO {
 
     class Matcher {
     private:
-        static int halfPatchSize = 4;
-        static int patchSize     = 8;
-        static int patchArea     = 64;
+        static int patchSize;
+        static int patchArea;
+        static int halfPatchSize;
 
     public:
-        EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+        EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
 
         Matcher() {};
         ~Matcher() {};
         
         // findDirectMatch
-        int  getBestSearchLevel(const Matrix2d& Acr, const int max_level);
+        int  getBestSearchLevel(const Matrix2f& Acr, const int max_level);
         bool findDirectMatch(FramePtr curFrame, LandMarkPtr landmark, Vector2f& px);
-        bool getWarpAffineMatrix(FramePtr refFrame, FramePtr curFrame, Vector3f& refDirect, float depth, Matrix2f& warpMatrix);
+        bool findEpipolarMatch(FramePtr curFrame, FeaturePtr feature, Quaternionf& Rcr, Vector3f& tcr, float minDepth, float maxDepth, float z);
+
+    private:
+        bool getWarpAffineMatrix(FramePtr& refFrame, FramePtr& curFrame, Quaternionf& Rcr, Vector3f& tcr, Vector3f& refDirect, float depth, int level, Matrix2f& warpMatrix);
         bool warpAffine(cv::Mat& image, Vector2f& px, Matrix2f& Acr, int level, int searchLevel, int halfPatchSize, uint8_t* patchPtr);
-        bool createPatchFromBorderPatch(uint8_t* patch, const uint8_t* const patchWithBorder, const int patchSize);
+        bool createPatchFromBorderPatch(uint8_t* patch, uint8_t* patchWithBorder, int patchSize);
 
     };
 

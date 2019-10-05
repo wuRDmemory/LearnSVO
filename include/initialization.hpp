@@ -11,7 +11,7 @@
 #include "landmark.hpp"
 #include "frame.hpp"
 #include "feature.hpp"
-#include "utils.hpp"
+#include "config.hpp"
 #include "matcher.hpp"
 
 namespace mSVO {

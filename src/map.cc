@@ -1,5 +1,5 @@
 #include "map.hpp"
-#include "utils.hpp"
+#include "config.hpp"
 #include "feature.hpp"
 
 namespace mSVO {
@@ -30,7 +30,7 @@ namespace mSVO {
                 int cnt = 0;
                 if (frame->isVisible(feature->mLandmark->xyz())) {
                     cnt++;
-                    if (cnt/N > Config::projectThreshold()) {
+                    if (cnt/N > Config::projectRatioThr()) {
                         keyframes.emplace_back(keyframe, keyframe->timestamp());
                         break;
                     }
