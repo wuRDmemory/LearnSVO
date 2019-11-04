@@ -20,6 +20,7 @@ int main(int argc, char* argv[]) {
     }
 
     mSVO::VO vo(config_file);
+    vo.setup();
     // main loop
     double last_timestamp = -1.0;
     for (string& image_name: image_list) {

@@ -9,6 +9,7 @@ namespace mSVO {
     Vector3f     PoseOptimize::mOldtcw = Vector3f::Zero();
 
     bool PoseOptimize::optimize(FramePtr frame, int nIter, float projError, float& estscale, float& initChi2, float& endChi2, int& obsnum) {
+        const float EPS = Config::EPS();
         // set the model
         mRcw = frame->Rwc().inverse();
         mtcw = mRcw*frame->twc()*-1;
@@ -24,44 +25,44 @@ namespace mSVO {
         b.setZero();
 
         auto& features = frame->obs();
-        vector<float> initErrors; initErrors.reserve(features.size());
         for (auto it = features.begin(), end = features.end(); it != end; it++) {
             if (!(*it)->mLandmark) {
                 continue;
             }
-            Vector3f point = (*it)->mLandmark->xyz();
-            Vector3f pc = mRcw*point + mtcw;
-            Vector2f px = pc.head<2>() / pc(2);
-            Vector2f pt = ((*it)->mDirect).head<2>();
-            Vector2f error = pt - px;
-            initErrors.emplace_back(error.squaredNorm());
+            Vector3f Pw   = (*it)->mLandmark->xyz();
+            Vector3f Pc   = mRcw*Pw + mtcw;
+            Vector2f Pcxy = Pc.head<2>() / Pc(2);
+            Vector3f Pf   = (*it)->mDirect;
+            Vector2f Ptxy = Pf.head<2>() / Pf(2);
+            Vector2f error = Ptxy - Pcxy;
+            chi2 += error.squaredNorm();
+            cnt ++;
         }
 
-        if (initErrors.empty()) {
-            return false;
-        }
-
-        estscale = middleScaleEstimate(initErrors);
+        estscale = chi2 / cnt;
         initChi2 = estscale;
         // TODO: set the old model as model
         for (int i = 0; i < nIter; i++) {
             A.setZero();
             b.setZero();
+            cnt  = 0;
+            chi2 = 0;
             // compute the H and b matrix
             for (auto it = features.begin(), end = features.end(); it != end; it++) {
                 if (!(*it)->mLandmark) {
                     continue;
                 }
-                Vector3f point = (*it)->mLandmark->xyz();
-                Vector3f pc = mRcw*point + mtcw;
-                Vector2f px = pc.head<2>() / pc(2);
-                Vector2f pt = ((*it)->mDirect).head<2>();
-                Vector2f error = pt - px;
+                Vector3f Pw   = (*it)->mLandmark->xyz();
+                Vector3f Pc   = mRcw*Pw + mtcw;
+                Vector2f Pcxy = Pc.head<2>() / Pc(2);
+                Vector3f Pf   = (*it)->mDirect;
+                Vector2f Ptxy = Pf.head<2>() / Pf(2);
+                Vector2f error = Ptxy - Pcxy;
                 error /= (1<<(*it)->mLevel);
 
                 Matrix<float, 2, 6> J;
-                Frame::jacobian_uv2se3New(pc, mRcw*point, J);
-                float weight = TukeyWeightFunction(error.squaredNorm()/estscale);
+                Frame::jacobian_uv2se3New(Pc, mRcw*Pw, J);
+                float weight = 1.0f; //TukeyWeightFunction(error.squaredNorm()/estscale);
                 A.noalias() += J.transpose()*J*weight;
                 b.noalias() -= J.transpose()*error*weight;
 
@@ -87,33 +88,36 @@ namespace mSVO {
             mOldRcw = mRcw;
             mOldtcw = mtcw;
 
-            if (dx.norm() < 1e-7f) {
+            if (dx.norm() < EPS) {
                 break;
             }
         }
 
         // change the covariance to camera ordination
+        frame->Rwc() = mRcw.inverse();
+        frame->twc() = mRcw.inverse()*mtcw*-1;
         frame->covariance() = (A*frame->camera()->errorMultiplier2()).inverse();
         
-        obsnum = 0;
-        initErrors.clear(); initErrors.reserve(features.size());
+        chi2 = 0; cnt = 0; obsnum = 0;
         for (auto it = features.begin(), end = features.end(); it != end; it++) {
             if (!(*it)->mLandmark) {
                 continue;
             }
-            Vector3f point = (*it)->mLandmark->xyz();
-            Vector3f pc = mRcw*point + mtcw;
-            Vector2f px = pc.head<2>() / pc(2);
-            Vector2f pt = ((*it)->mDirect).head<2>();
-            Vector2f error = pt - px;
-            initErrors.emplace_back(error.squaredNorm());
+            Vector3f Pw   = (*it)->mLandmark->xyz();
+            Vector3f Pc   = mRcw*Pw + mtcw;
+            Vector2f Pcxy = Pc.head<2>() / Pc(2);
+            Vector3f Pf   = (*it)->mDirect;
+            Vector2f Ptxy = Pf.head<2>() / Pf(2);
+            Vector2f error = Ptxy - Pcxy;
+            chi2 += error.squaredNorm();
+            cnt ++;
 
             error /= (1<<(*it)->mLevel);
             if (error.norm() <= projError) {
                 obsnum++;
             }
         }
-        endChi2 = middleScaleEstimate(initErrors);
+        endChi2 = chi2 / cnt;
         return true;
     }
 

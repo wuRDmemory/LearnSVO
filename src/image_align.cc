@@ -26,6 +26,10 @@ namespace mSVO {
         }
         curFrame->Rwc() = refFrame->Rwc()*mRc_r_new.inverse();
         curFrame->twc() = refFrame->twc() - curFrame->Rwc()*mtc_r_new;
+        LOG(INFO) << ">>> [ImageAlign] Finish Align image";
+        LOG(INFO) << ">>> [image align] " << curFrame->twc().transpose();
+
+        testImageAlign(refFrame, curFrame);
     }
 
     void ImageAlign::prepareData(FramePtr refFrame, int level) {
@@ -38,18 +42,13 @@ namespace mSVO {
         const float fx    = refFrame->camera()->errorMultiplier2();
         Vector3f& pos     = refFrame->twc();
 
-#if SHOW_MATCH
-        mRefImage = ref_img.clone();
-#endif
-
         auto& features = refFrame->obs();
         mVisables.resize(features.size(), true);
         mRefPatchCache.resize(features.size(),   patchArea);
         mJacobianCache.resize(features.size()*patchArea, 6);
         int feature_cnt = 0;
-        for (auto begin = features.begin(); begin != features.end(); ++begin, ++feature_cnt) {
+        for (auto begin  = features.begin(); begin != features.end(); ++begin, ++feature_cnt) {
             Vector2f fPx = (*begin)->mPx*scale;
-            // LOG(INFO) << ">>> " << fPx.transpose();
             const float u_fref = fPx(0),             v_fref = fPx(1);
             const int   u_iref = (int)floor(fPx(0)), v_iref = (int)floor(fPx(1));
             // if the feature has no landmark or this point can not calculate the gradient of image
@@ -102,15 +101,6 @@ namespace mSVO {
         const float fx    = curFrame->camera()->errorMultiplier2();
         Vector3f& pos     = refFrame->twc();
 
-#if SHOW_MATCH
-        cv::Mat empty;
-        cv::RNG rng(time(NULL));
-        if (!linearSystem) {
-            cv::hconcat(mRefImage, cur_img, empty);
-            cv::cvtColor(empty, empty, cv::COLOR_GRAY2BGR);
-        }
-#endif
-
         auto& features = refFrame->obs();
         float chi2 = 0;
         int feature_cnt = 0;
@@ -134,15 +124,6 @@ namespace mSVO {
                 continue;
             }
 
-#if SHOW_MATCH
-            if (!linearSystem) {
-                int color_r = rng.uniform(0.0f, 1.0f)*255;
-                int color_g = rng.uniform(0.0f, 1.0f)*255;
-                int color_b = rng.uniform(0.0f, 1.0f)*255;
-                if (rng.uniform(0.0f, 1.0f) > 0.7)
-                    cv::line(empty, cv::Point(int(rPx(0)), int(rPx(1))), cv::Point(u_iref+stride, v_iref), cv::Scalar(color_r, color_g, color_b), 1);
-            }
-#endif
             const float subpix_u_ref = u_fref-u_iref;
             const float subpix_v_ref = v_fref-v_iref;
             const float w_ref_tl = (1.0-subpix_u_ref) * (1.0-subpix_v_ref);
@@ -171,13 +152,6 @@ namespace mSVO {
                 }
             }
         }
-
-#if SHOW_MATCH
-        if (!linearSystem) {
-            cv::imshow("feature track", empty);
-            cv::waitKey();
-        }
-#endif
         return chi2 / (mInliersCnt+0.0001f);
     }
 
@@ -244,7 +218,8 @@ namespace mSVO {
         prepareData(refFrame, level);
         // main loop
         reset();
-        chi2 = computeError(refFrame, curFrame, level, false, true);
+        mInliersCnt = 0;
+        chi2 = computeError(refFrame, curFrame, level, false, false);
         float mu = 0.1f, v = 2, rho = -1;
         if(mu < 0){
             double H_max_diag = 0;
@@ -260,18 +235,15 @@ namespace mSVO {
             do {
                 reset();
                 // build linear function H b
-                computeError(refFrame, curFrame, level, true, true);
+                computeError(refFrame, curFrame, level, true, false);
                 // LM
                 mH += (mH.diagonal()*mu).asDiagonal();
                 // solve 
                 float chi2_new = 0;
-                
                 if (solve()) {
                     update(mRc_r_new, mtc_r_new, mRc_r_old, mtc_r_old);
-                    // success
                     mInliersCnt = 0;
-                    // recalculate the F(x)
-                    chi2_new = computeError(refFrame, curFrame, level, false, true);
+                    chi2_new = computeError(refFrame, curFrame, level, false, false);
                     rho = chi2 - chi2_new;
                 } else {
                     rho = -1;
@@ -284,15 +256,10 @@ namespace mSVO {
                                   << "  rho: "      << rho \
                                   << "  inlier: "   << mInliersCnt;
                     }
-                    // update old model
-                    // mTc_r_old = mTc_r_new;
                     mRc_r_old = mRc_r_new;
                     mtc_r_old = mtc_r_new;
-                    // update chi2, chi2 mean the value of F(x)
                     chi2 = chi2_new;
-                    // stop condition
-                    stop = maxLimit(mDeltaX)<=meps;
-                    // update mu and v
+                    stop = (maxLimit(mDeltaX)<=meps);
                     mu  *= max(1./3., min(1.-pow(2*rho-1,3), 2./3.));
                     v   = 2.;
                 } else {
@@ -314,5 +281,44 @@ namespace mSVO {
             // if stop, break
             if (stop) break;
         }
+    }
+
+    bool ImageAlign::testImageAlign(FramePtr refFrame, FramePtr curFrame) {
+        Quaternionf Rrw = refFrame->Rwc().inverse();
+        Quaternionf Rcw = curFrame->Rwc().inverse();
+        Vector3f&   twr = refFrame->twc();
+        Vector3f&   twc = curFrame->twc();
+
+        Mat& refImage = refFrame->imagePyr()[0];
+        Mat& curImage = curFrame->imagePyr()[0];
+        Mat  mergeImage;
+        addWeighted(refImage, 0.4, curImage, 0.6, 0, mergeImage);
+        cvtColor(mergeImage, mergeImage, COLOR_GRAY2BGR);
+
+        int num = 0;
+        auto& features = refFrame->obs();
+        for (auto it = features.begin(); it != features.end(); it++) {
+            FeaturePtr feature = *it;
+            if (!feature->mLandmark) {
+                continue;
+            }
+
+            Vector3f Pw = feature->mLandmark->xyz();
+            Vector2f Pruv = refFrame->world2uv(Pw);
+            Vector2f Pcuv = curFrame->world2uv(Pw);
+
+            if (!(refFrame->isVisible(Pruv, 0) && curFrame->isVisible(Pcuv, 0))) {
+                continue;
+            }
+
+            Scalar color(theRNG().uniform(0, 255), theRNG().uniform(0, 255), theRNG().uniform(0, 255));
+            line(mergeImage, Point(Pruv(0), Pruv(1)), Point(Pcuv(0), Pcuv(1)), color);
+            num++;
+        }
+
+        LOG(INFO) << "[testImageAlign] image align " << num << "/" << features.size() << endl;
+        imshow("[Image Align] image alignment", mergeImage);
+        waitKey();
+        return true;
     }
 }

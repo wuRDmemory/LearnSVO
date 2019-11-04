@@ -40,7 +40,19 @@ private:
     float mPyramidFactor;
     float mMinProjError;
     float mEPS;
+    float mDepthFilterNCCScore;
+    float mDepthFilterSigmaThr;
     float mfx, mfy, mcx, mcy, md0, md1, md2, md3, md4; 
+    float mViewKeyFrameSize;
+    float mViewKeyFrameLineWidth;
+    float mViewGraphLineWidth;
+    float mViewPointSize;
+    float mViewCameraSize;
+    float mViewCameraLineWidth;
+    float mViewViewpointX;
+    float mViewViewpointY;
+    float mViewViewpointZ;
+    float mViewViewpointF;
     
     static Config* mInstance;
 
@@ -103,6 +115,19 @@ public:
     // depth filter
     inline static int   depthFilterTrackMaxGap() { return mInstance->mDepthFilterTrackMaxGap; }
     inline static int   depthFilterIterCnt()     { return mInstance->mDepthFilterIterCnt;     }
+    inline static float depthFilterNCCScore()    { return mInstance->mDepthFilterNCCScore;    }
+    inline static float depthFilterSigmaThr()    { return mInstance->mDepthFilterSigmaThr;    }
+
+    inline static float viewKeyFrameSize()       { return mInstance->mViewKeyFrameSize;       }
+    inline static float viewKeyFrameLineWidth()  { return mInstance->mViewKeyFrameLineWidth;  }
+    inline static float viewGraphLineWidth()     { return mInstance->mViewGraphLineWidth;     }
+    inline static float viewPointSize()          { return mInstance->mViewPointSize;          }
+    inline static float viewCameraSize()         { return mInstance->mViewCameraSize;         }
+    inline static float viewCameraLineWidth()    { return mInstance->mViewCameraLineWidth;    }
+    inline static float viewViewpointX()         { return mInstance->mViewViewpointX;         }
+    inline static float viewViewpointY()         { return mInstance->mViewViewpointY;         }
+    inline static float viewViewpointZ()         { return mInstance->mViewViewpointZ;         }
+    inline static float viewViewpointF()         { return mInstance->mViewViewpointF;         }
 
     // instrinsc
     inline static float fx() { return mInstance->mfx; }

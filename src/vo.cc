@@ -8,13 +8,14 @@ namespace mSVO {
                                          Config::d0(), Config::d1(), Config::d2(), Config::d3(), Config::d4());
         mInitialor   = new KltHomographyInit();
         mLocalMap    = new Map(Config::keyFrameNum());
+        mDepthFilter = new DepthFilter(mLocalMap);
         mFeatureAlign = new FeatureAlign(mLocalMap);
+        mBundleAdjust = new BundleAdjustment(10, mLocalMap);
     }
 
     VO::~VO() { 
         if (mNewFrame) {
-            delete mNewFrame;
-            mNewFrame = NULL;
+            mNewFrame.reset();
         }
 
         if (mCameraModel) {
@@ -25,6 +26,12 @@ namespace mSVO {
         updateLevel = UPDATE_FIRST;
     }
 
+    void VO::setup() { 
+        LOG(INFO) << ">>> [VO] setup now";
+        updateLevel = UPDATE_FIRST;
+        mDepthFilter->startThread();
+    }
+
     void VO::addNewFrame(const cv::Mat& image, const double timestamp) {
         if (timestamp < -1) {
             throw std::runtime_error("timestamp is invalid");
@@ -32,7 +39,7 @@ namespace mSVO {
         if (image.empty()) {
             throw std::runtime_error("image is invalid");
         }
-        mNewFrame = new Frame(timestamp, mCameraModel, image);
+        mNewFrame.reset(new Frame(timestamp, mCameraModel, image));
         
         PROCESS_STATE res;
         if (updateLevel == UPDATE_FIRST) {
@@ -59,6 +66,7 @@ namespace mSVO {
         mLocalMap->addKeyFrame(mNewFrame);
         mRefFrame = mNewFrame;
         updateLevel = UPDATE_SECOND;
+        LOG(INFO) << ">>> [first frame] Oc: " << mNewFrame->twc().transpose();
         return PROCESS_SUCCESS;
     }
 
@@ -72,14 +80,15 @@ namespace mSVO {
         // TODO: add the frame to map, update refer frame
         mLocalMap->addKeyFrame(mNewFrame);
         mRefFrame = mNewFrame;
-
         // TODO: reset the mInitialor
         mInitialor->reset();
         updateLevel = UPDATE_FRAME;
+        LOG(INFO) << ">>> [second frame] Oc: " << mNewFrame->twc().transpose();
         return PROCESS_SUCCESS;
     }
 
     PROCESS_STATE VO::processFrame() {
+        LOG(INFO) << ">>> [track] id: " << mRefFrame->ID() << " --> " << mNewFrame->ID();
         mNewFrame->Rwc() = mRefFrame->Rwc();
         mNewFrame->twc() = mRefFrame->twc();
         // image align
@@ -99,11 +108,14 @@ namespace mSVO {
         float estimateScale, initChi2, endChi2; 
         int   inlierCnt;
         PoseOptimize::optimize(mNewFrame, Config::poseOptimizeIterCnt(), Config::minProjError(), estimateScale, initChi2, endChi2, inlierCnt);
-        LOG(INFO) << ">>> [process frame] Pose optimize chi2 update: " << initChi2 << "-->" << endChi2;
+        LOG(INFO) << ">>> [process frame] Pose optimize chi2 update: "  << initChi2 << "-->" << endChi2;
         LOG(INFO) << ">>> [process frame] Pose optimize inlier count: " << inlierCnt;
+        LOG(INFO) << ">>> [process frame] Pose optimize Oc: " << mNewFrame->twc().transpose();
         if (inlierCnt < Config::poseOptimizeInlierThr()) {
             // TODO： return false
-            LOG(INFO) << "[trackFrame] pose optimize failed! inlier: " << inlierCnt;
+            mNewFrame->Rwc() = mRefFrame->Rwc();
+            mNewFrame->twc() = mRefFrame->twc();
+            LOG(INFO) << ">>> [trackFrame] pose optimize failed! inlier: " << inlierCnt;
             return PROCESS_FAIL;
         }
 
@@ -111,30 +123,51 @@ namespace mSVO {
         StructOptimize::optimize(mNewFrame, Config::structOptimizeIterCnt(), Config::structOptimizePointCnt());
 
         // TODO: check wether need new key frame
-        if (!needKeyFrame(inlierCnt)) {
+        if (!needKeyFrame(inlierCnt, mNewFrame)) {
+            mDepthFilter->addNewFrame(mNewFrame);
             mRefFrame = mNewFrame;
             // TODO: add to depth filter
-
-            return UPDATE_NO_KEYFRAME;
+            updateLevel = UPDATE_FRAME;
+            return PROCESS_SUCCESS;
         }
-
-        // TODO: ALL BA
         
+        // add frame to the map
+        mLocalMap->addKeyFrame(mNewFrame);
+        // add the candidate landmark into the key frame.
+        // the landmark become UNKNOWN,  and can be GOOD.
+        // CANDIDATE only though this way to become UNKOWN
+        auto& obs = mNewFrame->obs();
+        for (auto it = obs.begin(); it != obs.end(); it++) {
+            FeaturePtr feature = *it;
+            feature->mLandmark->addFeature(feature);
+        }
+        mLocalMap->candidatePointManager().addLandmarkToFrame(mNewFrame);
+
+        // remove most far keyframe in localmap
+        if (mLocalMap->getKeyframeSize() > Config::keyFrameNum()) {
+            FramePtr removeKeyFrame;
+            mLocalMap->getFarestFrame(mNewFrame, removeKeyFrame);
+            mLocalMap->removeKeyFrame(removeKeyFrame);
+        }
+        // TODO: ALL BA
+        mBundleAdjust->run();
 
         mRefFrame = mNewFrame;
-        return UPDATE_KEYFRAME;
+        updateLevel = UPDATE_FRAME;
+        return PROCESS_SUCCESS;
     }
     
     void VO::finishProcess(int frameId, PROCESS_STATE res) {
-        LOG(INFO) << "[finishProcess] Process frame " << frameId << "finish";
+        LOG(INFO) << ">>> [finishProcess] Process frame " << frameId << " finish";
         if (res == PROCESS_FAIL && (updateLevel == UPDATE_FRAME || updateLevel == UPDATE_RELOCAL)) {
             updateLevel = UPDATE_RELOCAL;
         }
+        LOG(INFO) << ">>> ";
     }
 
     bool VO::needKeyFrame(int trackCnt, FramePtr frame) {
         // check the track feature count
-        if (trackCnt < Config::minTrackFeatureCnt()) {
+        if (trackCnt < Config::trackMinFeatureCnt()) {
             return true;
         }
 

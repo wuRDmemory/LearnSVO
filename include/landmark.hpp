@@ -17,7 +17,7 @@ namespace mSVO {
         static int id;
         int mId;
         Vector3f mXYZ;
-        vector<FeaturePtr> mFeatures;
+        Features mFeatures;
 
     public:
         EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
@@ -33,16 +33,19 @@ namespace mSVO {
         LandMark(Vector3f xyz, FeaturePtr feature);
 
         void addFeature(FeaturePtr feature);
-        void findClosestObs(Vector3f& framePose, FeaturePtr feature) const;
+        void findClosestObs(Vector3f& framePose, FeaturePtr& feature) const;
+        void safeRemoveLandmark();
+        void safeRemoveFeature(FeaturePtr feature);
         bool optimize(int nIter);
 
         inline Vector3f& xyz() { return mXYZ; }
+        inline Features& obs() { return mFeatures; }
 
         inline static void jacobian_uv2xyz(
             const Vector3f& bear, const Matrix3f& Rcw, Matrix<float, 2, 3>& point_jac) {
-            const float z_inv = 1.0/bear[2];
+            const float z_inv = 1.0/bear(2);
             const float z_inv_sq = z_inv*z_inv;
-            point_jac << z_inv, 0.0, -bear[0]*z_inv_sq, 0.0, z_inv, -bear[1]*z_inv_sq;
+            point_jac << z_inv, 0.0, -bear(0)*z_inv_sq, 0.0, z_inv, -bear(1)*z_inv_sq;
             point_jac = -point_jac * Rcw;
         }  
 
@@ -54,4 +57,5 @@ namespace mSVO {
     };
 
     typedef LandMark* LandMarkPtr;
+    typedef list<LandMarkPtr> Landmarks;
 }

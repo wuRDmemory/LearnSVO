@@ -15,6 +15,8 @@
 #include "feature_align.hpp"
 #include "pose_optimize.hpp"
 #include "struct_optimize.hpp"
+#include "depth_filter.hpp"
+#include "bundle_adjustment.hpp"
 
 namespace mSVO {
     using namespace std;
@@ -41,17 +43,19 @@ namespace mSVO {
         MapPtr          mLocalMap;
         FramePtr        mNewFrame, mRefFrame;
         CameraModelPtr  mCameraModel;
+        DepthFilterPtr  mDepthFilter;
         FeatureAlignPtr mFeatureAlign;
         KltHomographyInitPtr mInitialor;
-        
+        BundleAdjustmentPtr  mBundleAdjust;
+
         UPDATE_LEVEL updateLevel;
-    
         int mOldTrackCnt;
 
     public:
         VO(const string config_file);
         ~VO();
 
+        void setup();
         void addNewFrame(const cv::Mat& image, const double timestamp);
         
     private:
@@ -59,7 +63,7 @@ namespace mSVO {
         PROCESS_STATE processSencondFrame();
         PROCESS_STATE processFrame();
         
-        bool needKeyFrame(int trackCnt);
+        bool needKeyFrame(int trackCnt, FramePtr frame);
         void finishProcess(int frameid, PROCESS_STATE res);
 
     };

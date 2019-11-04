@@ -56,6 +56,9 @@ namespace mSVO {
         float maxLimit(Matrix<float, 6, 1>& x);
         float computeError(FramePtr refFrame, FramePtr curFrame, int level, bool linearSystem, bool useWeight);
         float weightFunction(float res);
+
+    private:
+        bool testImageAlign(FramePtr refFrame, FramePtr curFrame);
     };
 }
 

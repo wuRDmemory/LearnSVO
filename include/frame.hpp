@@ -7,8 +7,6 @@
 #include <eigen3/Eigen/Dense>
 #include <eigen3/Eigen/Core>
 #include <opencv2/opencv.hpp>
-#include "sophus/se3.h"
-#include "sophus/so3.h"
 #include "camera.hpp"
 #include "math_utils.hpp"
 
@@ -44,7 +42,7 @@ namespace mSVO {
         void initFrame(const cv::Mat& img);
         void addFeature(Feature* feature);
         bool isVisible(const Vector3f& xyz);
-        bool isVisible(const Vector2f& uv, int border);
+        bool isVisible(const Vector2f& uv, int border, int level=0);
 
         Vector2f world2uv(const Vector3f& XYZ);
         Vector3f world2camera(const Vector3f& XYZ);
@@ -83,9 +81,9 @@ namespace mSVO {
         }
 
         inline static void jacobian_uv2se3New(Vector3f& xyz_c, Vector3f rxyz, Matrix<float,2,6>& J) {
-            const float x = xyz_c[0];
-            const float y = xyz_c[1];
-            const float z_inv  = 1.0/xyz_c[2];
+            const float x = xyz_c(0);
+            const float y = xyz_c(1);
+            const float z_inv  = 1.0/xyz_c(2);
             const float z_inv2 = z_inv*z_inv;
 
             Matrix<float, 2, 3> reduce;
@@ -99,5 +97,5 @@ namespace mSVO {
         }
     };
 
-    typedef Frame* FramePtr;
+    typedef shared_ptr<Frame> FramePtr;
 }

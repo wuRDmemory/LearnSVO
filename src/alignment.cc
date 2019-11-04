@@ -54,11 +54,11 @@ namespace mSVO {
         float v = px.y();
 
         // termination condition
-        const float min_update_squared = 0.03f * 0.03f;
+        const float min_update_squared = 0.04f * 0.04f;
         const int cur_step = image.step.p[0];
 
         //  float chi2 = 0;
-        Vector3f update; update.setZero();
+        Vector3f update(0, 0, 0);
         for(int iter = 0; iter < iterCnt; ++iter) {
             int u_r = floor(u);
             int v_r = floor(v);
@@ -77,7 +77,7 @@ namespace mSVO {
             float wBR = subpix_x * subpix_y;
 
             // loop through search_patch, interpolate
-            uint8_t* it_ref = patch;
+            uint8_t* it_ref  = patch;
             float* it_ref_dx = refPatchDx;
             float* it_ref_dy = refPatchDy;
             //    float new_chi2 = 0.0;
@@ -97,7 +97,7 @@ namespace mSVO {
             update = Hinv * Jres;
             u += update[0];
             v += update[1];
-            mean_diff += update[2];
+            mean_diff -= update[2];
 
             if(update[0]*update[0]+update[1]*update[1] < min_update_squared) {
                 converged=true;

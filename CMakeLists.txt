@@ -4,14 +4,15 @@ set(CMAKE_CXX_STANDARD 11)
 
 list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/CmakeModules")
 
+find_package(OpenCV   REQUIRED)
+find_package(Ceres    REQUIRED)
+find_package(Glog     REQUIRED)
+find_package(Pangolin REQUIRED)
+
 include_directories(/usr/include/eigen3)
 include_directories(${PROJECT_SOURCE_DIR}/include)
 include_directories(${PROJECT_SOURCE_DIR}/camera)
-
-find_package(OpenCV REQUIRED)
-find_package(Ceres  REQUIRED)
-find_package(Glog   REQUIRED)
-find_package(Sophus REQUIRED)
+include_directories(${Pangolin_INCLUDE_DIRS})
 
 file(GLOB SOURCES 
         ${PROJECT_SOURCE_DIR}/src/*.cc
@@ -21,7 +22,8 @@ list(APPEND LINK_LIBS
     ${OpenCV_LIBS} 
     ${CERES_LIBRARIES} 
     ${GLOG_LIBRARIES} 
-    ${Sophus_LIBRARIES})
+    ${Pangolin_LIBRARIES}
+    )
 
 add_executable(${PROJECT_NAME} main.cc ${SOURCES})
 target_link_libraries(${PROJECT_NAME} ${LINK_LIBS})

@@ -1,7 +1,7 @@
 %YAML:1.0
 
 #Debug
-verbose: 1
+verbose: 0
 eps: 0.000001
 
 # pyramid parameters
@@ -27,14 +27,16 @@ instrinsc:
   d4: 1.1633
 
 # some threshold
-min_proj_error: 2.0
+min_proj_error: 3.0
 min_corner_thr: 200
 min_track_thr: 50
 min_inlier_thr: 50
 min_disparty_thr: 10
 
 # map parameter
-key_frame_size: 8
+key_frame_size:      8
+project_ratio_thr:   0.1
+close_key_frame_cnt: 5
 
 # feature align
 align_iter_cnt: 5
@@ -54,4 +56,21 @@ track_move_distance: 1.5
 
 # depth filter
 depth_filter_track_max_gap: 3
-depth_filter_iter_cnt: 8
+depth_filter_iter_cnt: 100
+depth_filter_ncc_score: 2000
+depth_filter_sigma_thr: 0.01
+
+#--------------------------------------------------------------------------------------------
+# Viewer Parameters
+#---------------------------------------------------------------------------------------------
+viewer:
+  KeyFrameSize: 0.05
+  KeyFrameLineWidth: 1
+  GraphLineWidth: 0.9
+  PointSize: 2
+  CameraSize: 0.08
+  CameraLineWidth: 3
+  ViewpointX: 0
+  ViewpointY: -0.7
+  ViewpointZ: -1.8
+  ViewpointF: 500

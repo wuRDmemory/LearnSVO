@@ -29,7 +29,7 @@ namespace mSVO {
         mImagePyr.resize(Config::pyramidNumber());
         mImagePyr[0] = img.clone();
         for (int i=1, N = Config::pyramidNumber(); i<N; i++) {
-            cv::resize(mImagePyr[i-1], mImagePyr[i], cv::Size(), scale, scale);
+            cv::pyrDown(mImagePyr[i-1], mImagePyr[i]);
         }
     }
 
@@ -42,8 +42,11 @@ namespace mSVO {
         return cxy(0) >= 0 && cxy(0) < mCamera->width() && cxy(1) >= 0 && cxy(1) < mCamera->height();
     }
 
-    bool Frame::isVisible(const Vector2f& uv, int border) {
-        return uv(0) >= border && uv(0) <  mCamera->width()-border && uv(1) >= border && uv(1) <  mCamera->height()-border;
+    bool Frame::isVisible(const Vector2f& uv, int border, int level) {
+        const float scale = 1.0f/(1<<level);
+        const int   width = mCamera->width() *scale;
+        const int  height = mCamera->height()*scale;
+        return uv(0) >= border && uv(0) <  width-border && uv(1) >= border && uv(1) < height-border;
     }
 
     Vector2f Frame::world2uv(const Vector3f& XYZ) {

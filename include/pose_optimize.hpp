@@ -4,7 +4,6 @@
 #include <opencv2/opencv.hpp>
 #include <eigen3/Eigen/Dense>
 #include <eigen3/Eigen/Core>
-#include "optimizor.hpp"
 #include "frame.hpp"
 #include "map.hpp"
 #include "feature.hpp"

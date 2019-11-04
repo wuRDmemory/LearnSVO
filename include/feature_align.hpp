@@ -39,7 +39,7 @@ namespace mSVO {
         void setCell(Vector2f& uv, LandMarkPtr landmark) {
             const int x = uv(0) / step;
             const int y = uv(1) / step;
-            cells[y*step + x].push_back(CandidateFeature(uv, landmark));
+            cells[y*cols + x].push_back(CandidateFeature(uv, landmark));
         }
     };
     
@@ -51,6 +51,7 @@ namespace mSVO {
 
         int mMatches;
         int mTrails;
+        int mProjectNum;
 
     public:
         EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
@@ -65,9 +66,9 @@ namespace mSVO {
 
     private:
         bool resetGridCell();
-        bool projectToCurFrame(FramePtr curFrame, FeaturePtr feature);
+        bool projectToCurFrame(FramePtr curFrame, LandMarkPtr landmark);
         bool alignGridCell(FramePtr curFrame, CandidateCell& candidate);
-
+        bool testProject(cv::Mat& img);
     };
 
     typedef FeatureAlign* FeatureAlignPtr;

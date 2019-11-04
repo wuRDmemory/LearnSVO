@@ -17,6 +17,10 @@ Config::Config(string configFile) {
     mPyramidNum  = static_cast<int>(file["pyr_num"]);
     mFeatureNum  = static_cast<int>(file["ftr_num"]);
 
+    mKeyFrameNum      = static_cast<int>(file["key_frame_size"]);
+    mProjectRatioThr  = static_cast<float>(file["project_ratio_thr"]);
+    mCloseKeyFrameCnt = static_cast<int>(file["close_key_frame_cnt"]);
+
     mMinTrackThr  = static_cast<int>(file["min_track_thr"]);
     mMinInlierThr = static_cast<int>(file["min_inlier_thr"]);
     mMinCornerThr = static_cast<int>(file["min_corner_thr"]);
@@ -39,6 +43,8 @@ Config::Config(string configFile) {
 
     mDepthFilterTrackMaxGap = static_cast<int>(file["depth_filter_track_max_gap"]);
     mDepthFilterIterCnt     = static_cast<int>(file["depth_filter_iter_cnt"]);
+    mDepthFilterNCCScore    = static_cast<float>(file["depth_filter_ncc_score"]);
+    mDepthFilterSigmaThr    = static_cast<float>(file["depth_filter_sigma_thr"]);
 
     cv::FileNode node = file["instrinsc"];
     { // instrinsc
@@ -52,6 +58,22 @@ Config::Config(string configFile) {
         md2 = static_cast<float>(node["d2"]);
         md3 = static_cast<float>(node["d3"]);
         md4 = static_cast<float>(node["d4"]);
+    }
+
+    node = file["viewer"];
+    { // instrinsc
+        mViewKeyFrameSize      = static_cast<float>(node["KeyFrameSize"]);
+        mViewKeyFrameLineWidth = static_cast<float>(node["KeyFrameLineWidth"]);
+        mViewGraphLineWidth    = static_cast<float>(node["GraphLineWidth"]);
+        mViewGraphLineWidth    = static_cast<float>(node["GraphLineWidth"]);
+
+        mViewPointSize         = static_cast<float>(node["PointSize"]);
+        mViewCameraSize        = static_cast<float>(node["CameraSize"]);
+        mViewCameraLineWidth   = static_cast<float>(node["CameraLineWidth"]);
+        mViewViewpointX        = static_cast<float>(node["ViewpointX"]);
+        mViewViewpointY        = static_cast<float>(node["ViewpointY"]);
+        mViewViewpointZ        = static_cast<float>(node["ViewpointZ"]);
+        mViewViewpointF        = static_cast<float>(node["ViewpointF"]);
     }
 }
 

@@ -10,17 +10,17 @@ namespace mSVO {
     using namespace std;
     using namespace cv;
     using namespace Eigen;
-    
-    enum FeatureType {
-        CORNER,
-        EDGELET
-    };
+
     class LandMark;
-    class Frame;
 
     class Feature {
     public:
         EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+
+        enum FeatureType {
+            CORNER,
+            EDGELET,
+        };
 
         int mLevel;            //!< Image pyramid level where feature was extracted.
         Frame* mFrame;         //!< Pointer to frame in which the feature was detected.
@@ -29,23 +29,30 @@ namespace mSVO {
         Vector3f mDirect;      //!< Unit-bearing vector of the feature.
         LandMark* mLandmark;   //!< Pointer to 3D point which corresponds to the feature.
 
-        Feature(Frame* frame, const Vector2f& px, int level=1) :
+        Feature(Frame* frame, const Vector2f& px, int level=0) :
             mType(CORNER), mFrame(frame), mPx(px),
             mDirect(frame->camera()->cam2world(px)),
             mLevel(level), mLandmark(NULL)
-        {}
+        {
+            mDirect.normalize();
+        }
 
         Feature(Frame* frame, const Vector2f& px, const Vector3f& direct, int level) :
             mType(CORNER), mFrame(frame), mPx(px),
             mDirect(direct), mLevel(level), mLandmark(NULL)
-        {}
+        {
+            mDirect.normalize();
+        }
 
         Feature(Frame* frame, LandMark* ldmk, const Vector2f& px, 
                 const Vector3f& direct, int level) :
             mType(CORNER), mFrame(frame), mPx(px),
             mDirect(direct), mLevel(level), mLandmark(ldmk)
-        {}
+        {
+            mDirect.normalize();
+        }
     };
 
     typedef Feature* FeaturePtr;
+    typedef list<FeaturePtr> Features;
 }
