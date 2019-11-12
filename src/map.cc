@@ -26,8 +26,10 @@ namespace mSVO {
                 landmark->nProjectFrameSuccess = 0;
                 landmark->nOptimizeFrameId = frame->ID();
                 frame->addFeature(landmark->obs().front());
-                unique_lock<mutex> lock(mMutex);
-                it = mCandidatePoints.erase(it);
+                {
+                    unique_lock<mutex> lock(mMutex);
+                    it = mCandidatePoints.erase(it);
+                }
             } else {
                 it++;
             }
@@ -113,7 +115,7 @@ namespace mSVO {
             float dis = (xyz - pose).norm();
             if (dis > maxDis) {
                 maxDis = dis;
-                keyframe.reset(kframe.get());
+                keyframe = kframe;
             }
         }
         return true;

@@ -8,6 +8,7 @@
 #include <string>
 #include <algorithm>
 #include <opencv2/opencv.hpp>
+#include <glog/logging.h>
 
 using namespace std;
 

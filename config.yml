@@ -40,6 +40,7 @@ close_key_frame_cnt: 5
 
 # feature align
 align_iter_cnt: 5
+feature_track_min_thr: 20
 
 # pose optimize
 pose_optimize_iter_cnt: 10

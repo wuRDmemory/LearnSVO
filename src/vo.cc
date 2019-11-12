@@ -10,7 +10,7 @@ namespace mSVO {
         mLocalMap    = new Map(Config::keyFrameNum());
         mDepthFilter = new DepthFilter(mLocalMap);
         mFeatureAlign = new FeatureAlign(mLocalMap);
-        mBundleAdjust = new BundleAdjustment(10, mLocalMap);
+        mBundleAdjust = new BundleAdjustment(5, mLocalMap);
     }
 
     VO::~VO() { 
@@ -100,7 +100,8 @@ namespace mSVO {
         LOG(INFO) << ">>> [process frame] feature trails:  " << mFeatureAlign->trails();
         LOG(INFO) << ">>> [process frame] feature matches: " << mFeatureAlign->matches();
         if (mFeatureAlign->matches() < Config::featureMatchMinThr()) {
-            LOG(INFO) << ">>> [process frame] too few feature track, start relocal";
+            LOG(INFO) << ">>> [process frame] too few feature track (" \
+                      << mFeatureAlign->matches() << "/" << Config::featureMatchMinThr() << "), start relocal";
             return PROCESS_FAIL;
         }
 
@@ -115,7 +116,7 @@ namespace mSVO {
             // TODO： return false
             mNewFrame->Rwc() = mRefFrame->Rwc();
             mNewFrame->twc() = mRefFrame->twc();
-            LOG(INFO) << ">>> [trackFrame] pose optimize failed! inlier: " << inlierCnt;
+            LOG(INFO) << ">>> [process frame] pose optimize failed! inlier: " << inlierCnt;
             return PROCESS_FAIL;
         }
 
@@ -123,6 +124,8 @@ namespace mSVO {
         StructOptimize::optimize(mNewFrame, Config::structOptimizeIterCnt(), Config::structOptimizePointCnt());
 
         // TODO: check wether need new key frame
+        float minDepth, meanDepth;
+        mNewFrame->getDepth(minDepth, meanDepth);
         if (!needKeyFrame(inlierCnt, mNewFrame)) {
             mDepthFilter->addNewFrame(mNewFrame);
             mRefFrame = mNewFrame;
@@ -131,6 +134,7 @@ namespace mSVO {
             return PROCESS_SUCCESS;
         }
         
+        LOG(INFO) << ">>> [process frame] add a key frame!";
         // add frame to the map
         mLocalMap->addKeyFrame(mNewFrame);
         // add the candidate landmark into the key frame.
@@ -142,6 +146,7 @@ namespace mSVO {
             feature->mLandmark->addFeature(feature);
         }
         mLocalMap->candidatePointManager().addLandmarkToFrame(mNewFrame);
+        LOG(INFO) << ">>> [process frame] add landmark to new key frame! key frame size: " << mLocalMap->getKeyframeSize();
 
         // remove most far keyframe in localmap
         if (mLocalMap->getKeyframeSize() > Config::keyFrameNum()) {
@@ -149,8 +154,13 @@ namespace mSVO {
             mLocalMap->getFarestFrame(mNewFrame, removeKeyFrame);
             mLocalMap->removeKeyFrame(removeKeyFrame);
         }
+        LOG(INFO) << ">>> [process frame] remove key frame done!";
+        
         // TODO: ALL BA
         mBundleAdjust->run();
+
+        // TODO: add key frame into depth update
+        // mDepthFilter->addNewKeyFrame(mNewFrame, minDepth, meanDepth);
 
         mRefFrame = mNewFrame;
         updateLevel = UPDATE_FRAME;
@@ -168,6 +178,7 @@ namespace mSVO {
     bool VO::needKeyFrame(int trackCnt, FramePtr frame) {
         // check the track feature count
         if (trackCnt < Config::trackMinFeatureCnt()) {
+            LOG(INFO) << ">>> [needKeyFrame] Track count: " << trackCnt << ", add new key frame";
             return true;
         }
 

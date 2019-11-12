@@ -29,7 +29,9 @@ namespace mSVO {
         LOG(INFO) << ">>> [ImageAlign] Finish Align image";
         LOG(INFO) << ">>> [image align] " << curFrame->twc().transpose();
 
+        #if SHOW_MATCH == 1
         testImageAlign(refFrame, curFrame);
+        #endif
     }
 
     void ImageAlign::prepareData(FramePtr refFrame, int level) {

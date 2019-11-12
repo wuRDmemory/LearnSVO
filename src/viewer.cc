@@ -1,5 +1,6 @@
 #include "viewer.hpp"
 #include "config.hpp"
+#include <time.h>
 
 namespace mSVO {
     Viewer::Viewer(MapPtr map): mMap(map) {
@@ -18,7 +19,6 @@ namespace mSVO {
             unique_lock<mutex> lock(mAddFrameMutex);
             mCurFrame  = curFrame;
         }
-        mConditionVariable.notify_all();
         return true;
     }
 
@@ -28,7 +28,7 @@ namespace mSVO {
         return true;
     }
 
-    bool Viewer::run() {
+    void Viewer::run() {
         pangolin::CreateWindowAndBind("SVO: Map Viewer",1024,768);
 
         // 3D Mouse handler requires depth testing to be enabled
@@ -53,32 +53,44 @@ namespace mSVO {
         Twc.SetIdentity();
 
         while (!mStop) {
+            // 
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+            
+            Frame* frame = NULL;
+            {
+                unique_lock<mutex> lock(mAddFrameMutex);
+                frame = mCurFrame;
+            }
 
-            unique_lock<mutex> lock(mAddFrameMutex);
-            mConditionVariable.wait(lock);
+            if (!frame) {
+                continue;
+            }
 
-            convertMatrix(mCurFrame->Rwc(), mCurFrame->twc(), Twc);
+            convertMatrix(frame->Rwc(), frame->twc(), Twc);
             s_cam.Follow(Twc);
             d_cam.Activate(s_cam);
             glClearColor(1.0f,1.0f,1.0f,1.0f);
             
             drawFrame(Twc);
-            drawPoint(mCurFrame->obs(), true);
+            drawPoint(frame->obs(), true);
 
             auto& keyFrames = mMap->keyFrames();
             for (auto iter = keyFrames.begin(), end = keyFrames.end(); iter != end; ++iter) {
-                FramePtr& frame = *iter;
-                if (frame.get() == mCurFrame) {
+                FramePtr& frame_ = *iter;
+                if (frame_.get() == frame) {
                     continue;
                 }
-                convertMatrix(frame->Rwc(), frame->twc(), Twc);
+                convertMatrix(frame_->Rwc(), frame_->twc(), Twc);
                 drawFrame(Twc);
-                drawPoint(frame->obs(), false);
+                drawPoint(frame_->obs(), false);
             }
 
             pangolin::FinishFrame();
+
+            cv::Mat& image = frame->imagePyr()[0];
+            cv::imshow("Current Image", image);
+            cv::waitKey(30);
         }
-        return true;
     }
 
     bool Viewer::convertMatrix(Quaternionf& Qwc, Vector3f& twc, pangolin::OpenGlMatrix& M) {

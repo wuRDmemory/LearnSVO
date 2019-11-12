@@ -1,6 +1,6 @@
 #include "initialization.hpp"
 
-#define SHOW_MATCH 1
+#define SHOW_MATCH 0
 
 namespace mSVO {
     KltHomographyInit::KltHomographyInit() { 

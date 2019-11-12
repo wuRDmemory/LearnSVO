@@ -30,3 +30,6 @@ target_link_libraries(${PROJECT_NAME} ${LINK_LIBS})
 
 add_executable(test_feature_align test/test_feature_align.cc src/alignment.cc)
 target_link_libraries(test_feature_align ${LINK_LIBS})
+
+# add_executable(test_viewer test/test_viewer.cc src/frame.cc)
+# target_link_libraries(test_viewer ${LINK_LIBS})

@@ -67,7 +67,7 @@ namespace mSVO {
                 break;
             }
         }
-        if (clearAll) type = DELETE;
+        if (clearAll) this->type = DELETE;
     }
 
     bool LandMark::optimize(int nIter) {

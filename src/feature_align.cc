@@ -1,6 +1,6 @@
 #include "feature_align.hpp"
 
-#define SHOW_PROJECT 1
+#define SHOW_PROJECT 0
 
 namespace mSVO {
     Grid::Grid(int imWidth, int imHeight, int cellSize) {

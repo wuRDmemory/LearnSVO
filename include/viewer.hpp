@@ -35,7 +35,7 @@ namespace mSVO {
         bool setup();
         bool addCurrentFrame(Frame* curFrame);
 
-        bool run();
+        void run();
         bool stop();
 
     private:

@@ -39,7 +39,7 @@ namespace mSVO {
             if (mAddFrames.size() > 2) {
                 mAddFrames.pop();
             }
-            mAddFrames.push(frame);    
+            mAddFrames.push(frame);
         }
         mSeedUpdateHalt = false;
         mConditionVariable.notify_one();
@@ -81,8 +81,9 @@ namespace mSVO {
                 }
             }
             runFilter(frame);
-            if(frame->isKeyFrame())
+            if(frame->isKeyFrame()) {
                 initialKeyFrame(frame);
+            }
         }
     }
 
@@ -90,8 +91,8 @@ namespace mSVO {
         mSeedUpdateHalt = true;
         Seed::batchID++;
 
-        vector<cv::Point2f> corners;
-        vector<int>         cornersLevel;
+        vector<Point2f> corners;
+        vector<int>     cornersLevel;
         mDetector->setMask(keyframe->obs());
         mDetector->detect(keyframe.get(), corners, cornersLevel);
         unique_lock<mutex> lock(mAddSeedLock);

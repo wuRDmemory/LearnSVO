@@ -1,6 +1,7 @@
 #include "frame.hpp"
 #include "config.hpp"
 #include "feature.hpp"
+#include "landmark.hpp"
 
 namespace mSVO {
     int Frame::id = 0;
@@ -47,6 +48,31 @@ namespace mSVO {
         const int   width = mCamera->width() *scale;
         const int  height = mCamera->height()*scale;
         return uv(0) >= border && uv(0) <  width-border && uv(1) >= border && uv(1) < height-border;
+    }
+
+    bool Frame::getDepth(float& minDepth, float& meanDepth) {
+        
+        minDepth = FLT_MAX;
+        meanDepth = 0;
+
+        int depthCnt = 0;
+        auto it = mObs.begin();
+        while (it != mObs.end()) {
+            FeaturePtr feature = *it;
+            LandMark* ldmk = feature->mLandmark;
+            if (!ldmk || ldmk->type == LandMark::LANDMARK_TYPR::DELETE) {
+                continue;
+            }
+            Vector3f& xyz = ldmk->xyz();
+            float z = (xyz - mtwc).norm();
+            minDepth = std::min(z, minDepth);
+            meanDepth += z;
+            depthCnt++;
+            it++;
+        }
+
+        meanDepth /= depthCnt;
+        return true;
     }
 
     Vector2f Frame::world2uv(const Vector3f& XYZ) {

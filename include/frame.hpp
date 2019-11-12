@@ -44,6 +44,8 @@ namespace mSVO {
         bool isVisible(const Vector3f& xyz);
         bool isVisible(const Vector2f& uv, int border, int level=0);
 
+        bool getDepth(float& minDepth, float& meanDepth);
+
         Vector2f world2uv(const Vector3f& XYZ);
         Vector3f world2camera(const Vector3f& XYZ);
 

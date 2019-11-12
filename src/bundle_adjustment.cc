@@ -10,7 +10,6 @@ namespace mSVO {
         // initial ceres
         const float focal = Config::fx();
         ceres::Problem problem;
-        ceres::LocalParameterization* poseLocal = new PoseLocalParameterization();
         ceres::LossFunction*       lossfunction = new ceres::HuberLoss(5.0/focal);
 
         vector<double*> keyFramePoses;
@@ -32,8 +31,8 @@ namespace mSVO {
             tmpPose[3] = Rcw.x(); tmpPose[4] = Rcw.y(); tmpPose[5] = Rcw.z(); tmpPose[6] = Rcw.w();
             keyFramePoses.push_back(tmpPose);
 
-            problem.AddParameterBlock(tmpPose, 7);
-            problem.SetParameterization(tmpPose, poseLocal);
+            ceres::LocalParameterization* poseLocal = new PoseLocalParameterization();
+            problem.AddParameterBlock(tmpPose, 7, poseLocal);
             if (i == 0 || i == 1) {
                 problem.SetParameterBlockConstant(tmpPose);
             }
@@ -43,7 +42,7 @@ namespace mSVO {
             while (iter != obs.end()) {
                 FeaturePtr feature = *iter;
                 LandMarkPtr landmark = feature->mLandmark;
-                if (!landmark) {
+                if (!landmark || landmark->type == LandMark::LANDMARK_TYPR::DELETE) {
                     iter++;
                     continue;
                 }
@@ -59,16 +58,22 @@ namespace mSVO {
                 vector<double*> params = {tmpPose, tmpXYZ};
                 problem.AddResidualBlock(cost, lossfunction, params);
                 iter++;
+                j++;
             }
+            it++;
             i++;
         }
+        keyPointXYZ.resize(j);
+        LOG(INFO) << ">>> problem scale: vertex: " << i << " edge: " << j;
 
-        ceres::Solver::Options option;
-        option.linear_solver_type = ceres::DENSE_QR;
-        option.max_num_iterations = mMaxIter;
+        ceres::Solver::Options options;
+        options.max_num_iterations = mMaxIter;
+        options.linear_solver_type = ceres::DENSE_SCHUR;
+        options.trust_region_strategy_type   = ceres::DOGLEG;
+        options.minimizer_progress_to_stdout = true;
 
         ceres::Solver::Summary summary;
-        ceres::Solve(option, &problem, &summary);
+        ceres::Solve(options, &problem, &summary);
 
         i = 0, j = 0;
         it = keyFrames.begin();
@@ -86,7 +91,7 @@ namespace mSVO {
             while (iter != obs.end()) {
                 FeaturePtr feature   = *iter;
                 LandMarkPtr landmark = feature->mLandmark;
-                if (!landmark) {
+                if (!landmark || landmark->type == LandMark::LANDMARK_TYPR::DELETE) {
                     iter++;
                     continue;
                 }
@@ -97,6 +102,7 @@ namespace mSVO {
                 iter++;
                 j++;
             }
+            it++;
             i++;
         }
         assert(i == keyFrames.size());

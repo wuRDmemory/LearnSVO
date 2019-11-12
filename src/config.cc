@@ -20,6 +20,7 @@ Config::Config(string configFile) {
     mKeyFrameNum      = static_cast<int>(file["key_frame_size"]);
     mProjectRatioThr  = static_cast<float>(file["project_ratio_thr"]);
     mCloseKeyFrameCnt = static_cast<int>(file["close_key_frame_cnt"]);
+    mFeatureMatchMinThr = static_cast<int>(file["feature_track_min_thr"]);
 
     mMinTrackThr  = static_cast<int>(file["min_track_thr"]);
     mMinInlierThr = static_cast<int>(file["min_inlier_thr"]);
@@ -83,6 +84,12 @@ int loadDirectory(std::string dir_path, std::vector<std::string>& file_list, str
     struct dirent * ptr;
     string x, dirPath;
     dir = opendir(dir_path.c_str()); //打开一个目录
+    
+    if (!dir) {
+        LOG(INFO) << ">>> [loadDirectory] Can not open directory";
+        return -1;
+    }
+
     while((ptr = readdir(dir)) != NULL) {
         x = ptr->d_name;
         if (x == "." or x == "..")
