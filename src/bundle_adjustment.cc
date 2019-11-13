@@ -10,7 +10,7 @@ namespace mSVO {
         // initial ceres
         const float focal = Config::fx();
         ceres::Problem problem;
-        ceres::LossFunction*       lossfunction = new ceres::HuberLoss(5.0/focal);
+        ceres::LossFunction* lossfunction = new ceres::HuberLoss(5.0/focal);
 
         vector<double*> keyFramePoses;
         vector<double*> keyPointXYZ;
@@ -19,7 +19,7 @@ namespace mSVO {
         keyFramePoses.reserve(keyFrames.size());
         keyPointXYZ.reserve(keyFrames.size()*100);
         
-        int i = 0, j = 0;
+        int  i  = 0, j = 0;
         auto it = keyFrames.begin();
         while (it != keyFrames.end()) {
             Frame* frame = it->get();
@@ -27,7 +27,7 @@ namespace mSVO {
             Vector3f    tcw = Rcw*frame->twc()*-1.0f;
 
             double* tmpPose = new double[7];
-            tmpPose[0] = tcw.x(); tmpPose[0] = tcw.y(); tmpPose[0] = tcw.z(); 
+            tmpPose[0] = tcw.x(); tmpPose[1] = tcw.y(); tmpPose[2] = tcw.z(); 
             tmpPose[3] = Rcw.x(); tmpPose[4] = Rcw.y(); tmpPose[5] = Rcw.z(); tmpPose[6] = Rcw.w();
             keyFramePoses.push_back(tmpPose);
 
@@ -98,7 +98,7 @@ namespace mSVO {
                     continue;
                 }
                 
-                double* &tmpXYZ = keyPointXYZ[j];
+                double* tmpXYZ = keyPointXYZ[j];
                 Vector3f xyz(tmpXYZ[0], tmpXYZ[1], tmpXYZ[2]);
                 feature->mLandmark->xyz() = xyz;
                 iter++;

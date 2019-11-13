@@ -43,13 +43,16 @@ namespace mSVO {
             LandMarkPtr landmark = it->first;
             Frame* originFrame = it->second;
             if (originFrame == frame.get()) {
-                unique_lock<mutex> lock(mMutex);
-                mTrashPoints->push_back(it->first);
+                {
+                    unique_lock<mutex> lock(mMutex);
+                    mTrashPoints->push_back(it->first);
+                }
                 it = mCandidatePoints.erase(it);
             } else {
                 it++;
             }
         }
+        return 1;
     }
 
     Map::Map(int mapSize): mMapSize(mapSize) {
@@ -123,7 +126,9 @@ namespace mSVO {
 
     bool Map::removeKeyFrame(FramePtr& keyframe) {
         // find the key frame 
-        for (FramePtr& kframe : mKeyFrames) {
+        auto iter = mKeyFrames.begin();
+        while (iter != mKeyFrames.end()) {
+            FramePtr& kframe  = *iter;
             if (kframe.get() == keyframe.get()) {
                 // remove all landmark in this key frame.
                 auto& features = kframe->obs();
@@ -136,9 +141,12 @@ namespace mSVO {
                     delete (*it);
                     it = features.erase(it);
                 }
+                mKeyFrames.erase(iter);
                 break;
             }
+            iter++;
         }
+        
         // remove the CANDIDATE point in candidate list
         mCandidatePointsManager.removeCandidateLandmark(keyframe);
         return true;

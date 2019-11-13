@@ -17,14 +17,14 @@ namespace mSVO {
 
     class PoseLocalParameterization : public ceres::LocalParameterization {
         virtual bool Plus(const double *x, const double *delta, double *x_plus_delta) const { 
-            const Eigen::Vector3d tcw_old(x);
+            const Eigen::Vector3d    tcw_old(x);
             const Eigen::Quaterniond qcw_old(x+3);
 
             Eigen::Map<const Eigen::Vector3d> deltat(delta);
             Eigen::Map<const Eigen::Vector3d> deltatheta(delta+3);
             Eigen::Quaterniond deltaq = deltaQuaternion<double>(deltatheta);
 
-            Eigen::Map<Eigen::Vector3d> tcw_new(x_plus_delta);
+            Eigen::Map<Eigen::Vector3d>    tcw_new(x_plus_delta);
             Eigen::Map<Eigen::Quaterniond> qcw_new(x_plus_delta+3);
 
             tcw_new = tcw_old + deltat;
@@ -55,7 +55,7 @@ namespace mSVO {
                                 double* residuals, double** jacobians) const {
             Vector3d    tcw(parameters[0][0], parameters[0][1], parameters[0][2]);
             Quaterniond Rcw(parameters[0][6], parameters[0][3], parameters[0][4], parameters[0][5]);
-            Vector3d    Pw(parameters[1][0], parameters[1][1], parameters[1][2]);
+            Vector3d    Pw(parameters[1][0],  parameters[1][1], parameters[1][2]);
 
             Vector3d Pc = Rcw * Pw + tcw;
             Vector2d xy(Pc(0)/Pc(2), Pc(1)/Pc(2));
@@ -68,6 +68,7 @@ namespace mSVO {
 
                 reduce << 1.0/Pc(2), 0, -Pc(0)/(Pc(2) * Pc(2)), 
                           0, 1.0/Pc(2), -Pc(1)/(Pc(2) * Pc(2));
+                
                 if (jacobians[0]) {
                     Eigen::Map<Matrix<double, 2, 7> > jacobian_pose(jacobians[0]);
 
@@ -97,7 +98,6 @@ namespace mSVO {
 
     private:
         int mMaxIter;
-
         MapPtr mMap;
     };
 

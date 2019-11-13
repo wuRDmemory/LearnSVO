@@ -158,6 +158,7 @@ namespace mSVO {
         
         // TODO: ALL BA
         mBundleAdjust->run();
+        LOG(INFO) << ">>> [process frame] Oc: " << mNewFrame->twc().transpose();
 
         // TODO: add key frame into depth update
         // mDepthFilter->addNewKeyFrame(mNewFrame, minDepth, meanDepth);

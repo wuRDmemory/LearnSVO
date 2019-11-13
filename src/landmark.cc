@@ -65,6 +65,8 @@ namespace mSVO {
                 (*it)->mLandmark = NULL;
                 it = mFeatures.erase(it);
                 break;
+            } else {
+                it++;
             }
         }
         if (clearAll) this->type = DELETE;
