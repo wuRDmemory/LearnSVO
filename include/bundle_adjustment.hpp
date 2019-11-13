@@ -17,18 +17,18 @@ namespace mSVO {
 
     class PoseLocalParameterization : public ceres::LocalParameterization {
         virtual bool Plus(const double *x, const double *delta, double *x_plus_delta) const { 
-            Eigen::Map<const Eigen::Vector3d> tcw_old(x);
-            Eigen::Map<const Eigen::Quaterniond> qcw_old(x + 3);
+            const Eigen::Vector3d tcw_old(x);
+            const Eigen::Quaterniond qcw_old(x+3);
 
             Eigen::Map<const Eigen::Vector3d> deltat(delta);
             Eigen::Map<const Eigen::Vector3d> deltatheta(delta+3);
             Eigen::Quaterniond deltaq = deltaQuaternion<double>(deltatheta);
 
             Eigen::Map<Eigen::Vector3d> tcw_new(x_plus_delta);
-            Eigen::Map<Eigen::Quaterniond> qcw_new(x_plus_delta + 3);
+            Eigen::Map<Eigen::Quaterniond> qcw_new(x_plus_delta+3);
 
             tcw_new = tcw_old + deltat;
-            qcw_new = (qcw_old * deltaq).normalized();
+            qcw_new = (deltaq * qcw_old).normalized();
             return true; 
         }
 
@@ -73,7 +73,7 @@ namespace mSVO {
 
                     Matrix<double, 3, 6> jacobian;
                     jacobian.leftCols<3>()  = Eigen::Matrix3d::Identity();
-                    jacobian.rightCols<3>() = -symmetricMatrix<double>(Rcw*Pc);
+                    jacobian.rightCols<3>() = symmetricMatrix<double>(Rcw*Pw)*-1;
 
                     jacobian_pose.leftCols<6>() = reduce*jacobian;
                     jacobian_pose.rightCols<1>().setZero();

@@ -40,14 +40,16 @@ namespace mSVO {
             auto& obs = frame->obs();
             auto iter = obs.begin();
             while (iter != obs.end()) {
-                FeaturePtr feature = *iter;
+                FeaturePtr  feature  = *iter;
                 LandMarkPtr landmark = feature->mLandmark;
                 if (!landmark || landmark->type == LandMark::LANDMARK_TYPR::DELETE) {
                     iter++;
                     continue;
                 }
+                
                 Vector3f xyz = landmark->xyz();
-                Vector2f uv  = feature->mPx;
+                Vector3f uvz = feature->mDirect;
+                Vector2f uv  = uvz.head(2)/uvz(2);
 
                 double* tmpXYZ = new double[3];
                 tmpXYZ[0] = xyz(0); tmpXYZ[1] = xyz(1); tmpXYZ[2] = xyz(2);
