@@ -16,7 +16,7 @@ namespace mSVO {
     using namespace Eigen;
 
     class PoseLocalParameterization : public ceres::LocalParameterization {
-        virtual bool Plus(const double *x, const double *delta, double *x_plus_delta) const { 
+        virtual bool Plus(const double *x, const double *delta, double *x_plus_delta) const {
             const Eigen::Vector3d    tcw_old(x);
             const Eigen::Quaterniond qcw_old(x+3);
 
@@ -55,22 +55,22 @@ namespace mSVO {
                                 double* residuals, double** jacobians) const {
             Vector3d    tcw(parameters[0][0], parameters[0][1], parameters[0][2]);
             Quaterniond Rcw(parameters[0][6], parameters[0][3], parameters[0][4], parameters[0][5]);
-            Vector3d    Pw(parameters[1][0],  parameters[1][1], parameters[1][2]);
+            Vector3d    Pw( parameters[1][0], parameters[1][1], parameters[1][2]);
 
             Vector3d Pc = Rcw * Pw + tcw;
             Vector2d xy(Pc(0)/Pc(2), Pc(1)/Pc(2));
 
             Eigen::Map<Vector2d> residual(residuals);
-            residual = muv - xy;
+            residual = xy - muv;
 
             if (jacobians) {
-                Eigen::Matrix<double, 2, 3> reduce(2, 3);
+                Eigen::Matrix<double, 2, 3, Eigen::RowMajor> reduce(2, 3);
 
                 reduce << 1.0/Pc(2), 0, -Pc(0)/(Pc(2) * Pc(2)), 
                           0, 1.0/Pc(2), -Pc(1)/(Pc(2) * Pc(2));
                 
                 if (jacobians[0]) {
-                    Eigen::Map<Matrix<double, 2, 7> > jacobian_pose(jacobians[0]);
+                    Eigen::Map<Matrix<double, 2, 7, Eigen::RowMajor> > jacobian_pose(jacobians[0]);
 
                     Matrix<double, 3, 6> jacobian;
                     jacobian.leftCols<3>()  = Eigen::Matrix3d::Identity();
@@ -81,7 +81,7 @@ namespace mSVO {
                 }
 
                 if (jacobians[1]) {
-                    Eigen::Map<Matrix<double, 2, 3> > jacobian_point(jacobians[1]);
+                    Eigen::Map<Matrix<double, 2, 3, Eigen::RowMajor> > jacobian_point(jacobians[1]);
 
                     jacobian_point = reduce * Rcw.toRotationMatrix();
                 }

@@ -32,9 +32,9 @@ namespace mSVO {
             keyFramePoses.push_back(tmpPose);
 
             ceres::LocalParameterization* poseLocal = new PoseLocalParameterization();
-            problem.AddParameterBlock(tmpPose, 7, poseLocal);
+            problem.AddParameterBlock(keyFramePoses.back(), 7, poseLocal);
             if (i == 0 || i == 1) {
-                problem.SetParameterBlockConstant(tmpPose);
+                problem.SetParameterBlockConstant(keyFramePoses.back());
             }
 
             auto& obs = frame->obs();
@@ -47,18 +47,17 @@ namespace mSVO {
                     continue;
                 }
                 
-                Vector3f xyz = landmark->xyz();
-                Vector3f uvz = feature->mDirect;
-                Vector2f uv  = uvz.head(2)/uvz(2);
+                Vector3f& xyz = landmark->xyz();
+                Vector3f& uvz = feature->mDirect;
+                Vector2f  uv  = uvz.head(2)/uvz(2);
 
                 double* tmpXYZ = new double[3];
                 tmpXYZ[0] = xyz(0); tmpXYZ[1] = xyz(1); tmpXYZ[2] = xyz(2);
                 keyPointXYZ.push_back(tmpXYZ);
 
-                problem.AddParameterBlock(tmpXYZ, 3);
+                problem.AddParameterBlock(keyPointXYZ.back(), 3);
                 ceres::CostFunction* cost = new BACostFunction(uv);
-                vector<double*> params = {tmpPose, tmpXYZ};
-                problem.AddResidualBlock(cost, lossfunction, params);
+                problem.AddResidualBlock(cost, lossfunction, keyFramePoses.back(), keyPointXYZ.back());
                 iter++;
                 j++;
             }
