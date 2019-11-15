@@ -69,12 +69,11 @@ namespace mSVO {
         mKeyFrames.clear();
     }
 
-    void Map::addKeyFrame(FramePtr currFrame) {
-        currFrame->setKeyFrame();
+    void Map::addKeyFrame(FramePtr& currFrame) {
         mKeyFrames.push_back(currFrame);
     }
 
-    bool Map::getCloseFrame(FramePtr frame, vector<pair<FramePtr, double> >& keyframes) {
+    bool Map::getCloseFrame(FramePtr& frame, vector<pair<FramePtr, double> >& keyframes) {
         keyframes.clear();
         for (FramePtr& keyframe : mKeyFrames) {
             auto& obs = keyframe->obs();
@@ -96,7 +95,7 @@ namespace mSVO {
         return true;
     }
 
-    bool Map::getClosestFrame(FramePtr frame, FramePtr& keyframe) {
+    bool Map::getClosestFrame(FramePtr& frame, FramePtr& keyframe) {
         float minDis = FLT_MAX;
         Vector3f& pose = frame->twc();
         for (FramePtr& kframe : mKeyFrames) {
@@ -110,7 +109,7 @@ namespace mSVO {
         return true;
     }
 
-    bool Map::getFarestFrame(FramePtr frame, FramePtr& keyframe) {
+    bool Map::getFarestFrame(FramePtr& frame, FramePtr& keyframe) {
         float maxDis = FLT_MIN;
         Vector3f& pose = frame->twc();
         for (FramePtr& kframe : mKeyFrames) {

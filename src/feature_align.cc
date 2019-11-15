@@ -86,7 +86,7 @@ namespace mSVO {
                 break;
             }
         }
-        LOG(INFO) << "reproject done!!! align :" << mMatches;
+        LOG(INFO) << ">>> [reproject] reproject done!!! align :" << mMatches;
         return true;
     }
 

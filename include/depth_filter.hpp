@@ -65,9 +65,9 @@ namespace mSVO {
         DepthFilter(MapPtr map);
         ~DepthFilter();
 
-        bool startThread();
-        bool addNewFrame(FramePtr frame);
-        bool addNewKeyFrame(FramePtr frame, float minDepth, float meanDepth);
+        bool startThread(bool createThread = false);
+        bool addNewFrame(FramePtr& frame);
+        bool addNewKeyFrame(FramePtr& frame, float minDepth, float meanDepth);
 
         int failedNum()  const { return mNFailNum; }
         int matchedNum() const { return mNMatched; }
@@ -75,7 +75,7 @@ namespace mSVO {
     private:
         bool mainloop();
         bool clearFrameList();
-        bool runFilter(FramePtr frame);
+        bool runFilter(FramePtr& frame);
         bool initialKeyFrame(FramePtr& keyframe);
         bool updateSeed(const float x, const float tau2, Seed* seed);
         float computeTau(Quaternionf& Rcr, Vector3f& tcr, Vector3f& direct, float z, float noiseAngle);

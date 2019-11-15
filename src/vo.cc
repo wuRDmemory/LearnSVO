@@ -78,6 +78,7 @@ namespace mSVO {
             return PROCESS_FAIL;
         }
         // TODO: add the frame to map, update refer frame
+        mNewFrame->setKeyFrame();
         mLocalMap->addKeyFrame(mNewFrame);
 
         float minDepth, meanDepth;
@@ -85,7 +86,7 @@ namespace mSVO {
 
         mDepthFilter->addNewKeyFrame(mNewFrame, 0.5*minDepth, meanDepth);
         mRefFrame = mNewFrame;
-        
+
         // TODO: reset the mInitialor
         mInitialor->reset();
         updateLevel = UPDATE_FRAME;
@@ -126,21 +127,21 @@ namespace mSVO {
             return PROCESS_FAIL;
         }
 
-        // TODO: optimize the point seen
+        // TODO: optimize the point seen, there maybe some error
         StructOptimize::optimize(mNewFrame, Config::structOptimizeIterCnt(), Config::structOptimizePointCnt());
 
-        // TODO: check wether need new key frame
+        // check wether need new key frame
         float minDepth, meanDepth;
         mNewFrame->getDepth(minDepth, meanDepth);
         if (!needKeyFrame(inlierCnt, mNewFrame)) {
             mDepthFilter->addNewFrame(mNewFrame);
             mRefFrame = mNewFrame;
-            // TODO: add to depth filter
             updateLevel = UPDATE_FRAME;
             return PROCESS_SUCCESS;
         }
         
-        LOG(INFO) << ">>> [process frame] add a key frame!";
+        mNewFrame->setKeyFrame();
+        LOG(INFO) << ">>> [process frame] add a key frame! Id: " << mNewFrame->ID();
         // add the candidate landmark into the key frame.
         // the landmark become UNKNOWN,  and can be GOOD.
         // CANDIDATE only though this way to become UNKOWN
@@ -152,17 +153,17 @@ namespace mSVO {
         mLocalMap->candidatePointManager().addLandmarkToFrame(mNewFrame);
         LOG(INFO) << ">>> [process frame] add landmark to new key frame! key frame size: " << mLocalMap->getKeyframeSize();
 
+        // ALL BA
+        mBundleAdjust->run();
+        LOG(INFO) << ">>> [process frame] Oc: " << mNewFrame->twc().transpose();
+        
         // remove most far keyframe in localmap
         if (mLocalMap->getKeyframeSize() > Config::keyFrameNum()) {
             FramePtr removeKeyFrame;
             mLocalMap->getFarestFrame(mNewFrame, removeKeyFrame);
             mLocalMap->removeKeyFrame(removeKeyFrame);
+            LOG(INFO) << ">>> [process frame] remove key frame done!";
         }
-        LOG(INFO) << ">>> [process frame] remove key frame done!";
-        
-        // TODO: ALL BA
-        mBundleAdjust->run();
-        LOG(INFO) << ">>> [process frame] Oc: " << mNewFrame->twc().transpose();
 
         // TODO: add key frame into depth update
         mDepthFilter->addNewKeyFrame(mNewFrame, minDepth, meanDepth);

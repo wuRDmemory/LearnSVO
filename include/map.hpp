@@ -49,10 +49,10 @@ namespace mSVO {
         ~Map();
         
         void reset();   //!< when lost, reset the map
-        void addKeyFrame(FramePtr currFrame);
-        bool getCloseFrame(FramePtr frame, vector<pair<FramePtr, double> >& keyframes);
-        bool getClosestFrame(FramePtr frame, FramePtr& keyframe);
-        bool getFarestFrame(FramePtr frame,  FramePtr& keyframe);
+        void addKeyFrame(FramePtr& currFrame);
+        bool getCloseFrame(FramePtr& frame, vector<pair<FramePtr, double> >& keyframes);
+        bool getClosestFrame(FramePtr& frame, FramePtr& keyframe);
+        bool getFarestFrame(FramePtr& frame,  FramePtr& keyframe);
         bool removeKeyFrame(FramePtr& keyframe);
         bool addLandmarkToTrash(LandMarkPtr ldmk);
 

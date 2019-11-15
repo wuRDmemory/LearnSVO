@@ -97,7 +97,7 @@ namespace mSVO {
             update = Hinv * Jres;
             u += update[0];
             v += update[1];
-            mean_diff -= update[2];
+            mean_diff += update[2];
 
             if(update[0]*update[0]+update[1]*update[1] < min_update_squared) {
                 converged=true;

@@ -22,18 +22,18 @@ namespace mSVO {
         for (int i=0; i < mStep; i++)
         for (int j=0; j < mStep; j++) {
             cv::Rect& rroi = mGridCellRoi[i*mStep + j];
-            cv::Point tl    = rroi.tl();
-            cv::Point br    = rroi.br();
-            cv::Mat roi     = image.rowRange(tl.y, br.y).colRange(tl.x, br.x);
+            cv::Point tl   = rroi.tl();
+            cv::Point br   = rroi.br();
+            cv::Mat roi    = image.rowRange(tl.y, br.y).colRange(tl.x, br.x);
             // find fast corner
             vector<cv::Point2f> corner;
             cv::goodFeaturesToTrack(roi, corner, 5, 0.1, 10);
             for (int i=0; i<corner.size(); i++) {
-                Point px(corner[i].x + tl.x, corner[i].y+tl.y);
+                Point px(corner[i].x+tl.x, corner[i].y+tl.y);
                 if (0 == mMask.at<uchar>(px)) {
                     continue;
                 }
-                keyPoints.emplace_back(corner[i].x + tl.x, corner[i].y + tl.y);
+                keyPoints.emplace_back(corner[i].x+tl.x, corner[i].y+tl.y);
                 pointsLevel.emplace_back(0);
             }
         }
@@ -46,7 +46,7 @@ namespace mSVO {
         // int y = int(uv(1)) % mStep;
         // mOccupied[y*mCols + x] = true;
         if (mMask.at<uchar>(int(uv.y()), int(uv.y()))) {
-            cv::circle(mMask, Point(uv.x(), uv.y()), 5, cv::Scalar::all(0), -1);
+            cv::circle(mMask, Point(uv.x(), uv.y()), 15, cv::Scalar::all(0), -1);
         }
         return true;
     }
@@ -55,9 +55,11 @@ namespace mSVO {
         for (auto it = obs.begin(), end = obs.end(); it != end; it++) {
             Vector2f uv = (*it)->mPx;
             if (mMask.at<uchar>(int(uv.y()), int(uv.y()))) {
-                cv::circle(mMask, Point(uv.x(), uv.y()), 5, cv::Scalar::all(0), -1);
+                cv::circle(mMask, Point(uv.x(), uv.y()), 15, cv::Scalar::all(0), -1);
             }
         }
+        // cv::imshow("mask", mMask);
+        // cv::waitKey();
         return true;
     }
 

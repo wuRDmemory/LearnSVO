@@ -15,7 +15,9 @@ namespace mSVO {
         seenFrameID = batchID;
     }
 
-    DepthFilter::DepthFilter(MapPtr map): mMap(map), mStop(false), mNewKeyFrameFlag(false) {
+    DepthFilter::DepthFilter(MapPtr map): mMap(map), mStop(false), 
+                                          mNewKeyFrameFlag(false),
+                                          mThread(NULL) {
         mDetector = new Detector(Config::width(), Config::height(), Config::gridCellNumber(), Config::pyramidNumber(), 10.0f);
     }
 
@@ -26,33 +28,41 @@ namespace mSVO {
         delete mDetector;
     }
 
-    bool DepthFilter::startThread() { 
+    bool DepthFilter::startThread(bool createThread) { 
         mStop = false;
         mSeedUpdateHalt = false;
-        mThread = new thread(&DepthFilter::mainloop, this);
+        mThread = createThread ? new thread(&DepthFilter::mainloop, this) : NULL;
         return true;
     }
 
-    bool DepthFilter::addNewFrame(FramePtr frame) {
-        {
+    bool DepthFilter::addNewFrame(FramePtr& frame) {
+        if (mThread){
             unique_lock<mutex> lock(mAddFrameLock);
             if (mAddFrames.size() > 2) {
                 mAddFrames.pop();
             }
             mAddFrames.push(frame);
+            mSeedUpdateHalt = false;
+            mConditionVariable.notify_one();
+        } else {
+            runFilter(frame);
         }
-        mSeedUpdateHalt = false;
-        mConditionVariable.notify_one();
+        
     }
 
-    bool DepthFilter::addNewKeyFrame(FramePtr frame, float minDepth, float meanDepth) {
+    bool DepthFilter::addNewKeyFrame(FramePtr& frame, float minDepth, float meanDepth) {
         assert(frame->isKeyFrame());
         mDepthMin  = minDepth;
         mDepthMean = meanDepth;
         mNewKeyFrameFlag = true;
         mSeedUpdateHalt  = true;
-        mNewKeyFrame     = frame;
-        mConditionVariable.notify_one();
+        if (mThread) {
+            mNewKeyFrame     = frame;
+            mConditionVariable.notify_one();
+        } else {
+            runFilter(frame);
+            initialKeyFrame(frame);
+        }
     }
 
     bool DepthFilter::clearFrameList() { 
@@ -108,7 +118,7 @@ namespace mSVO {
         return true;
     }
 
-    bool DepthFilter::runFilter(FramePtr frame) {
+    bool DepthFilter::runFilter(FramePtr& frame) {
         mNFailNum = 0;
         mNMatched = 0;
         float pxNoise      = 1.0f;
@@ -163,6 +173,7 @@ namespace mSVO {
                 continue;
             }
 
+            // cout << "Seed id: " << seed->id << "  pass match!" << endl;
             // compute tau
             float tau = computeTau(Rcr, tcr, feature->mDirect, z, pxErrorAngle);
             float tauInverse = 0.5f * (1.0f/max(0.0000001f, z - tau) - 1.0f/(z + tau));
@@ -186,6 +197,7 @@ namespace mSVO {
                 seed->feature->mLandmark = point;
                 {
                     // add the landmark to the candidate list
+                    cout << "seed: " << seed->id << " matured" << endl;
                     mMap->candidatePointManager().addCandidateLandmark(point, frame);
                 }
                 begin = mSeedList.erase(begin);
@@ -195,6 +207,7 @@ namespace mSVO {
                 begin++;
             }
         }
+        cout << "Bad Match: " << mNFailNum << "  Good Match: " << mNMatched << endl;
         return true;
     }
 

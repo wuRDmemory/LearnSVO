@@ -69,7 +69,7 @@ namespace mSVO {
     bool Matcher::warpAffine(cv::Mat& image, Vector2f& px, Matrix2f& Acr, int level, int searchLevel, int halfPatchSize, uint8_t* patchPtr) {
         Matrix2f Arc = Acr.inverse();
         if (isnan(Arc(0, 0))) {
-            LOG(INFO) << ">>> Warper is bad." << endl;
+            // LOG(INFO) << ">>> Warper is bad." << endl;
             return false;
         }
 
@@ -143,7 +143,7 @@ namespace mSVO {
         Vector3f&  curFramePose = curFrame->twc();
         landmark->findClosestObs(curFramePose, refFeature);
         if (!refFeature) {
-            return false;
+            return false; 
         }
 
         // TODO: calculate the warp matrix because the distance between them is very large
@@ -258,7 +258,8 @@ namespace mSVO {
             curPatch = NULL;
         }
 
-        // align
+        /// align, the threshold is too high?
+        /// TODO: add the scale?
         if (bestNCC < Config::depthFilterNCCScore()*patchArea) {
             return false;
         }
