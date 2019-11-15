@@ -50,6 +50,7 @@ namespace mSVO {
         mDepthMin  = minDepth;
         mDepthMean = meanDepth;
         mNewKeyFrameFlag = true;
+        mSeedUpdateHalt  = true;
         mNewKeyFrame     = frame;
         mConditionVariable.notify_one();
     }
@@ -70,9 +71,9 @@ namespace mSVO {
                     mConditionVariable.wait(lock);
                 }
                 // check new key frame first
-                if(mNewKeyFrame) {
-                    mNewKeyFrame    = false;
-                    mSeedUpdateHalt = false;
+                if(mNewKeyFrameFlag) {
+                    mNewKeyFrameFlag = false;
+                    mSeedUpdateHalt  = false;
                     clearFrameList();
                     frame = mNewKeyFrame;
                 } else {
@@ -87,7 +88,7 @@ namespace mSVO {
         }
     }
 
-    bool DepthFilter::initialKeyFrame(FramePtr keyframe) {
+    bool DepthFilter::initialKeyFrame(FramePtr& keyframe) {
         mSeedUpdateHalt = true;
         Seed::batchID++;
 
@@ -132,8 +133,9 @@ namespace mSVO {
 
             // get releative pose
             FeaturePtr feature = seed->feature;
-            Quaternionf Rcr = frame->Rwc().inverse()*feature->mFrame->Rwc();
-            Vector3f    tcr = frame->Rwc().inverse()*(feature->mFrame->twc() - frame->twc());
+            Frame*    refFrame = feature->mFrame;
+            Quaternionf Rcr = frame->Rwc().inverse()*refFrame->Rwc();
+            Vector3f    tcr = frame->Rwc().inverse()*(refFrame->twc() - frame->twc());
 
             Vector3f   rxyz = feature->mDirect/seed->mu;
             Vector3f   cxyz = Rcr*rxyz + tcr;
@@ -144,7 +146,10 @@ namespace mSVO {
 
             // project the cxyz to plane
             Vector2f cuv = frame->camera()->world2cam(cxyz);
-            frame->isVisible(cuv, 0);
+            if (!frame->isVisible(cuv, 0)) {
+                begin++;
+                continue;
+            }
 
             // project the depth min and max to plane.
             float sigma = sqrt(seed->sigma2);
@@ -167,7 +172,7 @@ namespace mSVO {
             mNMatched++;
 
             // update seed's seen id
-            seed->seenFrameID = frame->ID();
+            seed->seenFrameID = Seed::batchID;
             if(frame->isKeyFrame()) {
                 // The feature detector should not initialize new seeds close to this location
                 mDetector->setMask(mMatcher.getUV());
@@ -184,7 +189,7 @@ namespace mSVO {
                     mMap->candidatePointManager().addCandidateLandmark(point, frame);
                 }
                 begin = mSeedList.erase(begin);
-            } if (isnan(minDepth)) {
+            } else if (isnan(minDepth)) {
                 begin = mSeedList.erase(begin);
             } else {
                 begin++;

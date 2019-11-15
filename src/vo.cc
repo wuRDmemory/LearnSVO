@@ -79,7 +79,13 @@ namespace mSVO {
         }
         // TODO: add the frame to map, update refer frame
         mLocalMap->addKeyFrame(mNewFrame);
+
+        float minDepth, meanDepth;
+        mNewFrame->getDepth(minDepth, meanDepth);
+
+        mDepthFilter->addNewKeyFrame(mNewFrame, 0.5*minDepth, meanDepth);
         mRefFrame = mNewFrame;
+        
         // TODO: reset the mInitialor
         mInitialor->reset();
         updateLevel = UPDATE_FRAME;
@@ -135,8 +141,6 @@ namespace mSVO {
         }
         
         LOG(INFO) << ">>> [process frame] add a key frame!";
-        // add frame to the map
-        mLocalMap->addKeyFrame(mNewFrame);
         // add the candidate landmark into the key frame.
         // the landmark become UNKNOWN,  and can be GOOD.
         // CANDIDATE only though this way to become UNKOWN
@@ -161,7 +165,10 @@ namespace mSVO {
         LOG(INFO) << ">>> [process frame] Oc: " << mNewFrame->twc().transpose();
 
         // TODO: add key frame into depth update
-        // mDepthFilter->addNewKeyFrame(mNewFrame, minDepth, meanDepth);
+        mDepthFilter->addNewKeyFrame(mNewFrame, minDepth, meanDepth);
+
+        // add frame to the map
+        mLocalMap->addKeyFrame(mNewFrame);
 
         mRefFrame = mNewFrame;
         updateLevel = UPDATE_FRAME;

@@ -76,7 +76,7 @@ namespace mSVO {
         bool mainloop();
         bool clearFrameList();
         bool runFilter(FramePtr frame);
-        bool initialKeyFrame(FramePtr keyframe);
+        bool initialKeyFrame(FramePtr& keyframe);
         bool updateSeed(const float x, const float tau2, Seed* seed);
         float computeTau(Quaternionf& Rcr, Vector3f& tcr, Vector3f& direct, float z, float noiseAngle);
         
