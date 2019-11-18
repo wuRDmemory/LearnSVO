@@ -57,8 +57,8 @@ track_move_distance: 1.5
 
 # depth filter
 depth_filter_track_max_gap: 3
-depth_filter_iter_cnt: 100
-depth_filter_ncc_score: 700
+depth_filter_iter_cnt: 1000
+depth_filter_ncc_score: 100
 depth_filter_sigma_thr: 0.01
 
 #--------------------------------------------------------------------------------------------

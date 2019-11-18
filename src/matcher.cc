@@ -224,7 +224,7 @@ namespace mSVO {
 
         // TODO: align them
         const int nStep = int(epipolarLen/0.7f);
-        Vector2f step   = epipolar / nStep;
+        Vector2f   step = epipolar / nStep;
 
         if (nStep > Config::depthFilterIterCnt()) {
             LOG(INFO) << ">>> depth filter too many step";
@@ -254,7 +254,7 @@ namespace mSVO {
                 bestNCC = score;
                 bestuv  = uv;
             }
-            free(curPatch);
+            delete(curPatch);
             curPatch = NULL;
         }
 

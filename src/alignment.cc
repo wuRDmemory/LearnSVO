@@ -54,7 +54,7 @@ namespace mSVO {
         float v = px.y();
 
         // termination condition
-        const float min_update_squared = 0.04f * 0.04f;
+        const float min_update_squared = 0.1f*0.1f;
         const int cur_step = image.step.p[0];
 
         //  float chi2 = 0;

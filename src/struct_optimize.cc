@@ -11,6 +11,7 @@ namespace mSVO {
             }
             pts.push_back(landmark);
         }
+        
         int cnt = min(maxPoints, (int)pts.size());
         std::nth_element(pts.begin(), pts.begin() + cnt, pts.end(), [](LandMarkPtr& a, LandMarkPtr& b) {
             return a->nOptimizeFrameId > b->nOptimizeFrameId;

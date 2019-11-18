@@ -49,7 +49,6 @@ namespace mSVO {
 
         list<SeedPtr> mSeedList;
         queue<FramePtr> mAddFrames;
-        default_random_engine generator;
 
         mutex mAddFrameLock, mAddSeedLock;
         condition_variable mConditionVariable;
@@ -79,6 +78,8 @@ namespace mSVO {
         bool initialKeyFrame(FramePtr& keyframe);
         bool updateSeed(const float x, const float tau2, Seed* seed);
         float computeTau(Quaternionf& Rcr, Vector3f& tcr, Vector3f& direct, float z, float noiseAngle);
+
+        float normalPDF(float x, float mean, float sigma);
         
     };
 

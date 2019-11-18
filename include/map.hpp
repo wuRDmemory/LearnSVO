@@ -27,7 +27,7 @@ namespace mSVO {
         bool reset();
         bool addCandidateLandmark(LandMarkPtr& point, FramePtr& frame);
         bool addLandmarkToFrame(FramePtr& frame);
-        bool removeCandidateLandmark(FramePtr& frame);
+        bool removeCandidateLandmark(Frame* frame);
 
         list<CandidateStruct>& candidateLandmark() { return mCandidatePoints; }
 
@@ -53,7 +53,7 @@ namespace mSVO {
         bool getCloseFrame(FramePtr& frame, vector<pair<FramePtr, double> >& keyframes);
         bool getClosestFrame(FramePtr& frame, FramePtr& keyframe);
         bool getFarestFrame(FramePtr& frame,  FramePtr& keyframe);
-        bool removeKeyFrame(FramePtr& keyframe);
+        bool removeKeyFrame(Frame* keyframe);
         bool addLandmarkToTrash(LandMarkPtr ldmk);
 
         int  getKeyframeSize() { return mKeyFrames.size(); }

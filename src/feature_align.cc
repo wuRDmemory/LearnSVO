@@ -17,7 +17,7 @@ namespace mSVO {
     }
 
     FeatureAlign::FeatureAlign(MapPtr map): mMap(map), mMatches(0), mTrails(0) {
-        mGrid = new Grid(Config::width(), Config::height(), 30);
+        mGrid = new Grid(Config::width(), Config::height(), 20);
     }
 
     FeatureAlign::~FeatureAlign() {
@@ -66,7 +66,7 @@ namespace mSVO {
         // TODO: 3. project all candidate landmark into current frame
         //          assign them to grid cell
         auto& candidates = mMap->candidatePointManager().candidateLandmark();
-        for (auto it = candidates.begin(); it != candidates.end();) {
+        for (auto it = candidates.begin(); it != candidates.end(); it++) {
             if (it->first->type == LandMark::LANDMARK_TYPR::DELETE) {
                 continue;
             }
@@ -86,13 +86,13 @@ namespace mSVO {
                 break;
             }
         }
-        LOG(INFO) << ">>> [reproject] reproject done!!! align :" << mMatches;
+        LOG(INFO) << ">>> [reproject] reproject done!!! align : " << mMatches;
         return true;
     }
 
     bool FeatureAlign::projectToCurFrame(FramePtr curFrame, LandMarkPtr landmark) {
-        Vector3f XYZ = landmark->xyz();
-        Vector2f cuv = curFrame->world2uv(XYZ);
+        Vector3f& XYZ = landmark->xyz();
+        Vector2f  cuv = curFrame->world2uv(XYZ);
         if (curFrame->isVisible(cuv, 8)) {
             mProjectNum++;
             mGrid->setCell(cuv, landmark);
@@ -132,7 +132,7 @@ namespace mSVO {
 
             ldmk->nProjectFrameSuccess++;
             if (ldmk->type == LandMark::UNKNOWN and ldmk->nProjectFrameSuccess > 10) {
-                ldmk->type = LandMark::GOOD;
+                ldmk->type =  LandMark::GOOD;
             }
 
             FeaturePtr newFeature = new Feature(curFrame.get(), pix);

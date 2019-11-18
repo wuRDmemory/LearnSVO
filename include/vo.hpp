@@ -58,8 +58,8 @@ namespace mSVO {
         void setup();
         void addNewFrame(const cv::Mat& image, const double timestamp);
 
-        MapPtr getMap()          { return mLocalMap; }
-        Frame* getCurrentFrame() { return mNewFrame.get(); }
+        MapPtr getMap()            { return mLocalMap; }
+        FramePtr getCurrentFrame() { return mNewFrame; }
         
     private:
         PROCESS_STATE processFirstFrame();

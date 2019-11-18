@@ -84,7 +84,7 @@ namespace mSVO {
         float minDepth, meanDepth;
         mNewFrame->getDepth(minDepth, meanDepth);
 
-        mDepthFilter->addNewKeyFrame(mNewFrame, 0.5*minDepth, meanDepth);
+        mDepthFilter->addNewKeyFrame(mNewFrame, minDepth, meanDepth);
         mRefFrame = mNewFrame;
 
         // TODO: reset the mInitialor
@@ -107,8 +107,10 @@ namespace mSVO {
         LOG(INFO) << ">>> [process frame] feature trails:  " << mFeatureAlign->trails();
         LOG(INFO) << ">>> [process frame] feature matches: " << mFeatureAlign->matches();
         if (mFeatureAlign->matches() < Config::featureMatchMinThr()) {
+            mNewFrame->Rwc() = mRefFrame->Rwc();
+            mNewFrame->twc() = mRefFrame->twc();
             LOG(INFO) << ">>> [process frame] too few feature track (" \
-                      << mFeatureAlign->matches() << "/" << Config::featureMatchMinThr() << "), start relocal";
+                      << mFeatureAlign->matches() << "/" << Config::featureMatchMinThr() << ")";
             return PROCESS_FAIL;
         }
 
@@ -141,7 +143,8 @@ namespace mSVO {
         }
         
         mNewFrame->setKeyFrame();
-        LOG(INFO) << ">>> [process frame] add a key frame! Id: " << mNewFrame->ID();
+        LOG(INFO) << ">>> [process frame] add a key frame! frame Id: " << mNewFrame->ID() << "; map size: " << mLocalMap->getKeyframeSize();
+
         // add the candidate landmark into the key frame.
         // the landmark become UNKNOWN,  and can be GOOD.
         // CANDIDATE only though this way to become UNKOWN
@@ -151,25 +154,24 @@ namespace mSVO {
             feature->mLandmark->addFeature(feature);
         }
         mLocalMap->candidatePointManager().addLandmarkToFrame(mNewFrame);
-        LOG(INFO) << ">>> [process frame] add landmark to new key frame! key frame size: " << mLocalMap->getKeyframeSize();
-
-        // ALL BA
-        mBundleAdjust->run();
-        LOG(INFO) << ">>> [process frame] Oc: " << mNewFrame->twc().transpose();
         
         // remove most far keyframe in localmap
         if (mLocalMap->getKeyframeSize() > Config::keyFrameNum()) {
             FramePtr removeKeyFrame;
             mLocalMap->getFarestFrame(mNewFrame, removeKeyFrame);
-            mLocalMap->removeKeyFrame(removeKeyFrame);
+            mLocalMap->removeKeyFrame(removeKeyFrame.get());
             LOG(INFO) << ">>> [process frame] remove key frame done!";
         }
 
-        // TODO: add key frame into depth update
+        // add key frame into depth update
         mDepthFilter->addNewKeyFrame(mNewFrame, minDepth, meanDepth);
 
         // add frame to the map
         mLocalMap->addKeyFrame(mNewFrame);
+
+                // ALL BA
+        mBundleAdjust->run();
+        LOG(INFO) << ">>> [process frame] Oc: " << mNewFrame->twc().transpose();
 
         mRefFrame = mNewFrame;
         updateLevel = UPDATE_FRAME;
@@ -178,10 +180,12 @@ namespace mSVO {
     
     void VO::finishProcess(int frameId, PROCESS_STATE res) {
         LOG(INFO) << ">>> [finishProcess] Process frame " << frameId << " finish";
-        if (res == PROCESS_FAIL && (updateLevel == UPDATE_FRAME || updateLevel == UPDATE_RELOCAL)) {
-            updateLevel = UPDATE_RELOCAL;
+        if (res == PROCESS_FAIL && updateLevel == UPDATE_FRAME) {
+            // TODO: add relocal condition
+            updateLevel = UPDATE_FRAME;
         }
         LOG(INFO) << ">>> ";
+        usleep(500000);
     }
 
     bool VO::needKeyFrame(int trackCnt, FramePtr frame) {

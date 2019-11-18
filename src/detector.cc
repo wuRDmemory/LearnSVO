@@ -18,6 +18,8 @@ namespace mSVO {
     }
 
     bool Detector::detect(Frame* frame, vector<Point2f>& keyPoints, vector<int>& pointsLevel) {
+        int allPN   = 0;
+        int validPN = 0;
         cv::Mat& image = frame->imagePyr()[0];
         for (int i=0; i < mStep; i++)
         for (int j=0; j < mStep; j++) {
@@ -27,36 +29,45 @@ namespace mSVO {
             cv::Mat roi    = image.rowRange(tl.y, br.y).colRange(tl.x, br.x);
             // find fast corner
             vector<cv::Point2f> corner;
-            cv::goodFeaturesToTrack(roi, corner, 5, 0.1, 10);
-            for (int i=0; i<corner.size(); i++) {
-                Point px(corner[i].x+tl.x, corner[i].y+tl.y);
-                if (0 == mMask.at<uchar>(px)) {
+            cv::goodFeaturesToTrack(roi, corner, 10, 0.1, 5);
+            for (int k=0; k<corner.size(); k++) {
+                allPN ++;
+                Point px(corner[k].x+tl.x, corner[k].y+tl.y);
+                int x = int(px.x) / mStep;
+                int y = int(px.y) / mStep;
+                if (mOccupied[y*mCols + x]) {
                     continue;
                 }
-                keyPoints.emplace_back(corner[i].x+tl.x, corner[i].y+tl.y);
+                mOccupied[y*mCols + x] = true;
+                keyPoints.emplace_back(corner[k].x+tl.x, corner[k].y+tl.y);
                 pointsLevel.emplace_back(0);
+                validPN++;
             }
         }
         reset();
+        cout << "Feature detect " <<  validPN << "/" << allPN;
         return true;
     }
 
     bool Detector::setMask(const Vector2f& uv) {
-        // int x = int(uv(0)) % mStep;
-        // int y = int(uv(1)) % mStep;
-        // mOccupied[y*mCols + x] = true;
-        if (mMask.at<uchar>(int(uv.y()), int(uv.y()))) {
-            cv::circle(mMask, Point(uv.x(), uv.y()), 15, cv::Scalar::all(0), -1);
-        }
+        int x = int(uv(0)) / mStep;
+        int y = int(uv(1)) / mStep;
+        mOccupied[y*mCols + x] = true;
+        // if (mMask.at<uchar>(int(uv.y()), int(uv.y()))) {
+        //     cv::circle(mMask, Point(uv.x(), uv.y()), 15, cv::Scalar::all(0), -1);
+        // }
         return true;
     }
 
     bool Detector::setMask(const Features& obs) {
         for (auto it = obs.begin(), end = obs.end(); it != end; it++) {
             Vector2f uv = (*it)->mPx;
-            if (mMask.at<uchar>(int(uv.y()), int(uv.y()))) {
-                cv::circle(mMask, Point(uv.x(), uv.y()), 15, cv::Scalar::all(0), -1);
-            }
+            // if (mMask.at<uchar>(int(uv.y()), int(uv.y()))) {
+            //     cv::circle(mMask, Point(uv.x(), uv.y()), 15, cv::Scalar::all(0), -1);
+            // }
+            int x = int(uv(0)) / mStep;
+            int y = int(uv(1)) / mStep;
+            mOccupied[y*mCols + x] = true;
         }
         // cv::imshow("mask", mMask);
         // cv::waitKey();
@@ -65,8 +76,9 @@ namespace mSVO {
 
     bool Detector::reset() {
         // mGridCell.resize(mCols*mRows, CellElem());
-        // mOccupied.resize(mRows*mCols, false);
-        mMask = Mat(mHeight, mWidth, CV_8U, Scalar::all(255));
+        mOccupied.clear();
+        mOccupied.resize(mRows*mCols, false);
+        // mMask = Mat(mHeight, mWidth, CV_8U, Scalar::all(255));
         return true;
     }
     

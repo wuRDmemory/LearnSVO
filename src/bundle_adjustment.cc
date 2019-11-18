@@ -19,6 +19,8 @@ namespace mSVO {
         keyFramePoses.reserve(keyFrames.size());
         keyPointXYZ.reserve(keyFrames.size()*100);
         
+        LOG(INFO) << ">>> [BA] Begin bundle adjustment";
+
         int  i  = 0, j = 0;
         auto it = keyFrames.begin();
         while (it != keyFrames.end()) {
@@ -65,7 +67,7 @@ namespace mSVO {
             i++;
         }
         keyPointXYZ.resize(j);
-        LOG(INFO) << ">>> problem scale: vertex: " << i << " edge: " << j;
+        LOG(INFO) << ">>> [BA] problem scale: vertex: " << i << " edge: " << j;
 
         ceres::Solver::Options options;
         options.max_num_iterations = mMaxIter;
@@ -115,6 +117,7 @@ namespace mSVO {
         for (auto& xyz : keyPointXYZ)
             delete(xyz);
         
+        LOG(INFO) << ">>> [BA] Finish bundle adjustment";
         return true;
     }
 }

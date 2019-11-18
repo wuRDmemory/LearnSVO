@@ -14,7 +14,7 @@ namespace mSVO {
         LOG(INFO) << ">>> [Viewer] stop viewer";
     }
 
-    bool Viewer::addCurrentFrame(Frame* curFrame) {
+    bool Viewer::addCurrentFrame(FramePtr curFrame) {
         {
             unique_lock<mutex> lock(mAddFrameMutex);
             mCurFrame  = curFrame;
@@ -56,13 +56,13 @@ namespace mSVO {
             // 
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
             
-            Frame* frame = NULL;
+            FramePtr frame = NULL;
             {
                 unique_lock<mutex> lock(mAddFrameMutex);
                 frame = mCurFrame;
             }
 
-            if (!frame) {
+            if (!frame.get()) {
                 continue;
             }
 
@@ -77,7 +77,7 @@ namespace mSVO {
             auto& keyFrames = mMap->keyFrames();
             for (auto iter = keyFrames.begin(), end = keyFrames.end(); iter != end; ++iter) {
                 FramePtr& frame_ = *iter;
-                if (frame_.get() == frame) {
+                if (frame_.get() == frame.get()) {
                     continue;
                 }
                 convertMatrix(frame_->Rwc(), frame_->twc(), Twc);

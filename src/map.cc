@@ -16,11 +16,13 @@ namespace mSVO {
     }
 
     bool CandidateLandmark::addLandmarkToFrame(FramePtr& frame) {
+        int  addN = 0;
         auto it = mCandidatePoints.begin();
         while (it != mCandidatePoints.end()) {
             LandMarkPtr landmark = it->first;
             if (landmark->obs().front()->mFrame == frame.get()) {
                 // change to the unkonw state
+                addN++;
                 landmark->type = LandMark::LANDMARK_TYPR::UNKNOWN;
                 landmark->nProjectFrameFailed = 0;
                 landmark->nProjectFrameSuccess = 0;
@@ -34,15 +36,16 @@ namespace mSVO {
                 it++;
             }
         }
+        LOG(INFO) << ">>> [addLandmarkToFrame] Add candidates: " << addN;
         return true;
     }
 
-    bool CandidateLandmark::removeCandidateLandmark(FramePtr& frame) {
+    bool CandidateLandmark::removeCandidateLandmark(Frame* frame) {
         auto it = mCandidatePoints.begin();
         while (it != mCandidatePoints.end()) {
             LandMarkPtr landmark = it->first;
             Frame* originFrame = it->second;
-            if (originFrame == frame.get()) {
+            if (originFrame == frame) {
                 {
                     unique_lock<mutex> lock(mMutex);
                     mTrashPoints->push_back(it->first);
@@ -123,16 +126,20 @@ namespace mSVO {
         return true;
     }
 
-    bool Map::removeKeyFrame(FramePtr& keyframe) {
+    bool Map::removeKeyFrame(Frame* keyframe) {
         // find the key frame 
         auto iter = mKeyFrames.begin();
         while (iter != mKeyFrames.end()) {
-            FramePtr& kframe  = *iter;
-            if (kframe.get() == keyframe.get()) {
+            Frame* kframe  = iter->get();
+            if (kframe == keyframe) {
                 // remove all landmark in this key frame.
                 auto& features = kframe->obs();
                 for (auto it = features.begin(); it != features.end(); ) {
                     LandMarkPtr landmark = (*it)->mLandmark;
+                    if (!landmark) {
+                        it++;
+                        continue;
+                    }
                     landmark->safeRemoveFeature(*it);
                     if (landmark->type == LandMark::DELETE) {
                         mTrashPoints.push_back(landmark);
@@ -154,7 +161,7 @@ namespace mSVO {
     bool Map::addLandmarkToTrash(LandMarkPtr ldmk) { 
         mTrashPoints.push_back(ldmk);
         auto& features = ldmk->obs();
-        for (auto it = features.begin(); it != features.end();) {
+        for (auto it = features.begin(); it != features.end();it++) {
             FeaturePtr feature = *it;
             feature->mLandmark = NULL;
         }

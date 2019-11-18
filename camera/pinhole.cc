@@ -35,6 +35,7 @@ namespace mvk {
             xyz[1] = px.y;
             xyz[2] = 1.0;
         }
+        xyz.normalize();
         return xyz;
     }
 

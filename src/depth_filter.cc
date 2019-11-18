@@ -54,9 +54,9 @@ namespace mSVO {
         assert(frame->isKeyFrame());
         mDepthMin  = minDepth;
         mDepthMean = meanDepth;
-        mNewKeyFrameFlag = true;
-        mSeedUpdateHalt  = true;
         if (mThread) {
+            mNewKeyFrameFlag = true;
+            mSeedUpdateHalt  = true;
             mNewKeyFrame     = frame;
             mConditionVariable.notify_one();
         } else {
@@ -149,6 +149,7 @@ namespace mSVO {
 
             Vector3f   rxyz = feature->mDirect/seed->mu;
             Vector3f   cxyz = Rcr*rxyz + tcr;
+
             if (cxyz(2) < 0) {
                 begin++;
                 continue;
@@ -156,7 +157,7 @@ namespace mSVO {
 
             // project the cxyz to plane
             Vector2f cuv = frame->camera()->world2cam(cxyz);
-            if (!frame->isVisible(cuv, 0)) {
+            if (!frame->isVisible(cuv, 3)) {
                 begin++;
                 continue;
             }
@@ -164,7 +165,7 @@ namespace mSVO {
             // project the depth min and max to plane.
             float sigma = sqrt(seed->sigma2);
             float minDepth = 1.0f/(seed->mu + sigma);
-            float maxDepth = 1.0f/max(seed->mu - sigma, 0.0001f);
+            float maxDepth = 1.0f/max(seed->mu - sigma, 0.000001f);
             float z = -1.0f;
             if (!mMatcher.findEpipolarMatch(frame.get(), feature, Rcr, tcr, minDepth, 1.0f/seed->mu, maxDepth, z) || z == -1.0f) {
                 seed->b++;
@@ -218,9 +219,17 @@ namespace mSVO {
         float alpha  = acos(direct.dot(tcr)/t_norm); // dot product
         float beta   = acos(a.dot(-tcr)/(t_norm*a_norm)); // dot product
         float beta_plus  = beta + noiseAngle;
-        float gamma_plus = M_PI - alpha-beta_plus; // triangle angles sum to PI
+        float gamma_plus = M_PI - alpha - beta_plus; // triangle angles sum to PI
         float z_plus     = t_norm*sin(beta_plus)/sin(gamma_plus); // law of sines
         return (z_plus - z); // tau
+    }
+
+    float DepthFilter::normalPDF(float x, float m, float s)
+    {
+        static const float inv_sqrt_2pi = 0.3989422804014327;
+        float a = (x - m) / s;
+
+        return inv_sqrt_2pi / s * std::exp(-0.5f * a * a);
     }
 
     bool DepthFilter::updateSeed(const float x, const float tau2, Seed* seed) {
@@ -228,16 +237,16 @@ namespace mSVO {
         if(std::isnan(norm_scale))
             return false;
         
-        std::normal_distribution<float> nd(seed->mu, norm_scale);
-        float s2 = 1./(1./seed->sigma2 + 1./tau2);
+        // std::default_random_engine generator;
+        float s2 = 1.0f/(1.0f/seed->sigma2 + 1.0f/tau2);
         float m = s2*(seed->mu/seed->sigma2 + x/tau2);
-        float C1 = seed->a/(seed->a+seed->b) * nd(generator);
-        float C2 = seed->b/(seed->a+seed->b) * 1.0f/seed->zRange;
+        float C1 = (float)seed->a/(seed->a+seed->b) * normalPDF(x, seed->mu, norm_scale);
+        float C2 = (float)seed->b/(seed->a+seed->b) * 1.0f/seed->zRange;
         float normalization_constant = C1 + C2;
         C1 /= normalization_constant;
         C2 /= normalization_constant;
-        float f = C1*(seed->a+1.)/(seed->a+seed->b+1.) + C2*seed->a/(seed->a+seed->b+1.);
-        float e = C1*(seed->a+1.)*(seed->a+2.)/((seed->a+seed->b+1.)*(seed->a+seed->b+2.))
+        float f = C1*(seed->a+1.0f)/(seed->a+seed->b+1.0f) + C2*seed->a/(seed->a+seed->b+1.0f);
+        float e = C1*(seed->a+1.0f)*(seed->a+2.0f)/((seed->a+seed->b+1.0f)*(seed->a+seed->b+2.0f))
                 + C2*seed->a*(seed->a+1.0f)/((seed->a+seed->b+1.0f)*(seed->a+seed->b+2.0f));
 
         // update parameters

@@ -33,24 +33,18 @@ namespace mSVO {
             mType(CORNER), mFrame(frame), mPx(px),
             mDirect(frame->camera()->cam2world(px)),
             mLevel(level), mLandmark(NULL)
-        {
-            mDirect.normalize();
-        }
+        {}
 
         Feature(Frame* frame, const Vector2f& px, const Vector3f& direct, int level) :
             mType(CORNER), mFrame(frame), mPx(px),
             mDirect(direct), mLevel(level), mLandmark(NULL)
-        {
-            mDirect.normalize();
-        }
+        {}
 
         Feature(Frame* frame, LandMark* ldmk, const Vector2f& px, 
                 const Vector3f& direct, int level) :
             mType(CORNER), mFrame(frame), mPx(px),
             mDirect(direct), mLevel(level), mLandmark(ldmk)
-        {
-            mDirect.normalize();
-        }
+        {}
     };
 
     typedef Feature* FeaturePtr;

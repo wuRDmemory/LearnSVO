@@ -25,7 +25,7 @@ namespace mSVO {
         condition_variable mConditionVariable;
 
         thread* mThread;
-        Frame* mCurFrame;
+        FramePtr mCurFrame;
         MapPtr mMap;
 
     public:
@@ -33,7 +33,7 @@ namespace mSVO {
         ~Viewer();
 
         bool setup();
-        bool addCurrentFrame(Frame* curFrame);
+        bool addCurrentFrame(FramePtr curFrame);
 
         void run();
         bool stop();
