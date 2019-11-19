@@ -227,7 +227,7 @@ namespace mSVO {
         Vector2f   step = epipolar / nStep;
 
         if (nStep > Config::depthFilterIterCnt()) {
-            LOG(INFO) << ">>> depth filter too many step";
+            // LOG(INFO) << ">>> depth filter too many step";
             return false;
         }
 

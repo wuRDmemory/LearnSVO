@@ -45,7 +45,6 @@ namespace mSVO {
             }
         }
         reset();
-        cout << "Feature detect " <<  validPN << "/" << allPN;
         return true;
     }
 

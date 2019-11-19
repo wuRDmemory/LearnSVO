@@ -67,6 +67,7 @@ namespace mSVO {
         bool startThread(bool createThread = false);
         bool addNewFrame(FramePtr& frame);
         bool addNewKeyFrame(FramePtr& frame, float minDepth, float meanDepth);
+        bool removeKeyFrame(FramePtr& frame);
 
         int failedNum()  const { return mNFailNum; }
         int matchedNum() const { return mNMatched; }

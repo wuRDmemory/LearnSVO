@@ -12,10 +12,17 @@ namespace mSVO {
     }
 
     Frame::~Frame() {
-        std::for_each(mObs.begin(), mObs.end(), [](Feature* ftr) {
-            delete(ftr);
-            ftr = NULL;
-        });
+        cout << "Destory Frame id " << mID << " FeatureCnt: " << mObs.size() << endl;
+        // std::for_each(mObs.begin(), mObs.end(), [](Feature* ftr) {
+        //     delete(ftr);
+        //     ftr = NULL;
+        // });
+        
+        auto it = mObs.begin();
+        while (it != mObs.end()) {
+            delete(*it);
+            it = mObs.erase(it);
+        }
     }
 
     void Frame::initFrame(const cv::Mat& img) {

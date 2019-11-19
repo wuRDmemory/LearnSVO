@@ -42,5 +42,6 @@ namespace mSVO {
         bool convertMatrix(Quaternionf& Qwc, Vector3f& twc, pangolin::OpenGlMatrix& M);
         bool drawFrame(pangolin::OpenGlMatrix &Twc);
         bool drawPoint(Features& features, bool active);
+        bool showFrame(Frame* frame);
     };
 }

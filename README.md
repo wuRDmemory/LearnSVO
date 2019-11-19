@@ -7,4 +7,7 @@
 1. 删除了rpg_vikit包的依赖;
 2. bundle_adjustment的框架改为了ceres;
 3. 2D的alignment,收敛参数改为了0.1,因为0.1个像素确实已经很小了,没有必要那么小;
-4. 
+
+## TODO
+1. - [ ] 添加追踪质量评估，不好的就要生成新的key frame；
+2. - [ ] 添加成熟点先和已有的key frame进行匹配比较；

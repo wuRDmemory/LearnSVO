@@ -8,10 +8,10 @@ namespace mSVO {
         mCandidatePoints.clear();
     }
 
-    bool CandidateLandmark::addCandidateLandmark(LandMarkPtr& point, FramePtr& frame) {
+    bool CandidateLandmark::addCandidateLandmark(LandMarkPtr point, FeaturePtr feature) {
         unique_lock<mutex> lock(mMutex);
         point->type = LandMark::LANDMARK_TYPR::CANDIDATE;
-        mCandidatePoints.push_back(make_pair(point, frame.get()));
+        mCandidatePoints.push_back(make_pair(point, feature));
         return true;
     }
 
@@ -28,6 +28,7 @@ namespace mSVO {
                 landmark->nProjectFrameSuccess = 0;
                 landmark->nOptimizeFrameId = frame->ID();
                 frame->addFeature(landmark->obs().front());
+                it->second->mFrame->addFeature(it->second);
                 {
                     unique_lock<mutex> lock(mMutex);
                     it = mCandidatePoints.erase(it);
@@ -40,12 +41,12 @@ namespace mSVO {
         return true;
     }
 
-    bool CandidateLandmark::removeCandidateLandmark(Frame* frame) {
+    bool CandidateLandmark::removeCandidateLandmark(FramePtr& frame) {
         auto it = mCandidatePoints.begin();
         while (it != mCandidatePoints.end()) {
-            LandMarkPtr landmark = it->first;
-            Frame* originFrame = it->second;
-            if (originFrame == frame) {
+            // TODO：some error?
+            Frame* originFrame = it->second->mFrame;
+            if (originFrame == frame.get()) {
                 {
                     unique_lock<mutex> lock(mMutex);
                     mTrashPoints->push_back(it->first);
@@ -115,7 +116,7 @@ namespace mSVO {
     bool Map::getFarestFrame(FramePtr& frame, FramePtr& keyframe) {
         float maxDis = FLT_MIN;
         Vector3f& pose = frame->twc();
-        for (FramePtr& kframe : mKeyFrames) {
+        for (FramePtr kframe : mKeyFrames) {
             Vector3f& xyz = kframe->twc();
             float dis = (xyz - pose).norm();
             if (dis > maxDis) {
@@ -126,27 +127,25 @@ namespace mSVO {
         return true;
     }
 
-    bool Map::removeKeyFrame(Frame* keyframe) {
+    bool Map::removeKeyFrame(FramePtr& keyframe) {
         // find the key frame 
         auto iter = mKeyFrames.begin();
         while (iter != mKeyFrames.end()) {
             Frame* kframe  = iter->get();
-            if (kframe == keyframe) {
+            if (kframe == keyframe.get()) {
                 // remove all landmark in this key frame.
-                auto& features = kframe->obs();
-                for (auto it = features.begin(); it != features.end(); ) {
+                Features& features = kframe->obs();
+                for (auto it = features.begin(); it != features.end(); it++) {
                     LandMarkPtr landmark = (*it)->mLandmark;
                     if (!landmark) {
-                        it++;
                         continue;
                     }
+
                     landmark->safeRemoveFeature(*it);
-                    if (landmark->type == LandMark::DELETE) {
+                    if (landmark->type == LandMark::DELETE) 
                         mTrashPoints.push_back(landmark);
-                    }
-                    delete (*it);
-                    it = features.erase(it);
                 }
+
                 mKeyFrames.erase(iter);
                 break;
             }

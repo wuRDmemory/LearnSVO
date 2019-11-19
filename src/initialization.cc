@@ -1,4 +1,5 @@
 #include "initialization.hpp"
+#include "ctime"
 
 #define SHOW_MATCH 0
 
@@ -180,13 +181,14 @@ namespace mSVO {
         vector<bool> vInliers(N, false);
 
         // Perform all RANSAC iterations and save the solution with highest score
+        RNG rng(time(NULL));
         for(int it = 0; it<N/3; it++) {
             seens.clear();
             // Select a minimum set
             for(int j=0; j<8; j++) {
                 int idx = 0;
                 do {
-                    idx = theRNG().uniform(0, N);
+                    idx = rng.uniform(0, N);
                 } while (seens.count(idx));
                 vPn1i[j] = vPn1[idx];
                 vPn2i[j] = vPn2[idx];

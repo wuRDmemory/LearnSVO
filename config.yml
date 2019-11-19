@@ -34,7 +34,7 @@ min_inlier_thr: 50
 min_disparty_thr: 10
 
 # map parameter
-key_frame_size:      8
+key_frame_size:      3
 project_ratio_thr:   0.1
 close_key_frame_cnt: 5
 

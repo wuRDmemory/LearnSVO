@@ -77,7 +77,9 @@ namespace mSVO {
             LOG(ERROR) << ">>> [second frame] Faild to create first key frame!";
             return PROCESS_FAIL;
         }
-        // TODO: add the frame to map, update refer frame
+
+        mOldTrackCnt = mNewFrame->obs().size();
+        // add the frame to map, update refer frame
         mNewFrame->setKeyFrame();
         mLocalMap->addKeyFrame(mNewFrame);
 
@@ -120,16 +122,9 @@ namespace mSVO {
         PoseOptimize::optimize(mNewFrame, Config::poseOptimizeIterCnt(), Config::minProjError(), estimateScale, initChi2, endChi2, inlierCnt);
         LOG(INFO) << ">>> [process frame] Pose optimize chi2 update: "  << initChi2 << "-->" << endChi2;
         LOG(INFO) << ">>> [process frame] Pose optimize inlier count: " << inlierCnt;
-        LOG(INFO) << ">>> [process frame] Pose optimize Oc: " << mNewFrame->twc().transpose();
-        if (inlierCnt < Config::poseOptimizeInlierThr()) {
-            // TODO： return false
-            mNewFrame->Rwc() = mRefFrame->Rwc();
-            mNewFrame->twc() = mRefFrame->twc();
-            LOG(INFO) << ">>> [process frame] pose optimize failed! inlier: " << inlierCnt;
-            return PROCESS_FAIL;
-        }
+        LOG(INFO) << ">>> [process frame] Pose optimize Oc: " << mNewFrame->twc().transpose(); 
 
-        // TODO: optimize the point seen, there maybe some error
+        // optimize the point seen, there maybe some error
         StructOptimize::optimize(mNewFrame, Config::structOptimizeIterCnt(), Config::structOptimizePointCnt());
 
         // check wether need new key frame
@@ -155,12 +150,18 @@ namespace mSVO {
         }
         mLocalMap->candidatePointManager().addLandmarkToFrame(mNewFrame);
         
+        // ALL BA
+        mBundleAdjust->run();
+        LOG(INFO) << ">>> [process frame] Oc: " << mNewFrame->twc().transpose();
+
         // remove most far keyframe in localmap
         if (mLocalMap->getKeyframeSize() > Config::keyFrameNum()) {
+            LOG(INFO) << ">>> [process frame] begin remove key frame! Size: " << mLocalMap->getKeyframeSize();
             FramePtr removeKeyFrame;
             mLocalMap->getFarestFrame(mNewFrame, removeKeyFrame);
-            mLocalMap->removeKeyFrame(removeKeyFrame.get());
-            LOG(INFO) << ">>> [process frame] remove key frame done!";
+            mLocalMap->removeKeyFrame(removeKeyFrame);
+            mDepthFilter->removeKeyFrame(removeKeyFrame);
+            LOG(INFO) << ">>> [process frame] remove key frame " << removeKeyFrame->ID() << " done! Size: " << mLocalMap->getKeyframeSize();
         }
 
         // add key frame into depth update
@@ -168,10 +169,6 @@ namespace mSVO {
 
         // add frame to the map
         mLocalMap->addKeyFrame(mNewFrame);
-
-                // ALL BA
-        mBundleAdjust->run();
-        LOG(INFO) << ">>> [process frame] Oc: " << mNewFrame->twc().transpose();
 
         mRefFrame = mNewFrame;
         updateLevel = UPDATE_FRAME;
@@ -185,7 +182,7 @@ namespace mSVO {
             updateLevel = UPDATE_FRAME;
         }
         LOG(INFO) << ">>> ";
-        usleep(500000);
+        // usleep(500000);
     }
 
     bool VO::needKeyFrame(int trackCnt, FramePtr frame) {
@@ -195,6 +192,15 @@ namespace mSVO {
             return true;
         }
 
+        // add drop check
+        int dropCnt  = mOldTrackCnt - trackCnt;
+        mOldTrackCnt = trackCnt;
+        if (dropCnt > 10) {
+            LOG(INFO) << ">>> [needKeyFrame] drop feature count: " << dropCnt << "(" << mOldTrackCnt << "-->" << trackCnt << "), add new key frame";
+            return true;
+        }
+
+        // check translation
         Vector3f& curPos = frame->twc();
         auto& keyFrames = mLocalMap->keyFrames();
         float min_distance = FLT_MAX;

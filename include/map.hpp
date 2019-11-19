@@ -18,16 +18,17 @@ namespace mSVO {
     using namespace cv;
     using namespace Eigen;
 
-    typedef pair<LandMarkPtr, Frame*> CandidateStruct;
+    // Frame is the host frame
+    typedef pair<LandMarkPtr, FeaturePtr> CandidateStruct;
 
     class CandidateLandmark {
     public:
         void setTrash(Landmarks* trashPoints) { mTrashPoints = trashPoints; }
 
         bool reset();
-        bool addCandidateLandmark(LandMarkPtr& point, FramePtr& frame);
+        bool addCandidateLandmark(LandMarkPtr point, FeaturePtr feature);
         bool addLandmarkToFrame(FramePtr& frame);
-        bool removeCandidateLandmark(Frame* frame);
+        bool removeCandidateLandmark(FramePtr& frame);
 
         list<CandidateStruct>& candidateLandmark() { return mCandidatePoints; }
 
@@ -53,7 +54,7 @@ namespace mSVO {
         bool getCloseFrame(FramePtr& frame, vector<pair<FramePtr, double> >& keyframes);
         bool getClosestFrame(FramePtr& frame, FramePtr& keyframe);
         bool getFarestFrame(FramePtr& frame,  FramePtr& keyframe);
-        bool removeKeyFrame(Frame* keyframe);
+        bool removeKeyFrame(FramePtr& keyframe);
         bool addLandmarkToTrash(LandMarkPtr ldmk);
 
         int  getKeyframeSize() { return mKeyFrames.size(); }

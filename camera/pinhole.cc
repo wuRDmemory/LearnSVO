@@ -17,7 +17,7 @@ namespace mvk {
     }
 
     PinholeCamera::~PinholeCamera() {
-        ;
+        cout << "camera destroyed" << endl;
     }
 
     Eigen::Vector3f PinholeCamera::cam2world(const float& x, const float& y) const { 

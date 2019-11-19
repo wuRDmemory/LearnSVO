@@ -121,6 +121,7 @@ namespace mSVO {
     bool DepthFilter::runFilter(FramePtr& frame) {
         mNFailNum = 0;
         mNMatched = 0;
+        int maturePointCnt = 0;
         float pxNoise      = 1.0f;
         float focalLength  = frame->camera()->errorMultiplier2();
         float pxErrorAngle = atan(pxNoise/(2.0*focalLength))*2.0; 
@@ -192,23 +193,47 @@ namespace mSVO {
 
             // TODO: check the coverage
             if (seed->sigma2 < Config::depthFilterSigmaThr()) {
-                assert(seed->feature->mLandmark == NULL); // TODO this should not happen anymore
+                assert(feature->mLandmark == NULL); // TODO this should not happen anymore
                 Vector3f wxyz(feature->mFrame->Rwc()*(feature->mDirect*(1.0/seed->mu)) + feature->mFrame->twc());
                 LandMarkPtr point = new LandMark(wxyz, feature);
-                seed->feature->mLandmark = point;
+                feature->mLandmark = point;
                 {
                     // add the landmark to the candidate list
-                    cout << "seed: " << seed->id << " matured" << endl;
-                    mMap->candidatePointManager().addCandidateLandmark(point, frame);
+                    // cout << "seed: " << seed->id << " matured" << endl;
+                    maturePointCnt++;
+                    mMap->candidatePointManager().addCandidateLandmark(point, feature);
                 }
                 begin = mSeedList.erase(begin);
             } else if (isnan(minDepth)) {
                 begin = mSeedList.erase(begin);
+                mNFailNum++;
             } else {
                 begin++;
             }
         }
-        cout << "Bad Match: " << mNFailNum << "  Good Match: " << mNMatched << endl;
+        LOG(INFO) << ">>> [DepthFilter] Bad Match: " << mNFailNum << "  Good Match: " << mNMatched << "  Mature Point: " << maturePointCnt;
+        return true;
+    }
+
+    bool DepthFilter::removeKeyFrame(FramePtr& frame) {
+        // stop run thread
+        mSeedUpdateHalt = true;
+        // lock 
+        unique_lock<mutex> lock(mAddSeedLock);
+        
+        int  eraseCnt = 0;
+        auto it = mSeedList.begin();
+        while (it != mSeedList.end()) {
+            SeedPtr seed = *it;
+            if (seed->feature->mFrame == frame.get()) {
+                // erase it simply
+                it = mSeedList.erase(it);
+                eraseCnt++;
+            } else {
+                it++;
+            }
+        }
+        LOG(INFO) << ">>> [DepthFilter] erase " << eraseCnt << " seeds";
         return true;
     }
 

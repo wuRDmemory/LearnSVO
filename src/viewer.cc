@@ -28,6 +28,31 @@ namespace mSVO {
         return true;
     }
 
+    bool Viewer::showFrame(Frame* frame) {
+        cv::Mat image = frame->imagePyr()[0];
+        auto& obs = frame->obs();
+        auto  it  = obs.begin();
+        while (it != obs.end()) {
+            FeaturePtr feature = *it;
+            LandMarkPtr ldmk   = feature->mLandmark;
+            Vector2f   px = feature->mPx;
+            if (!ldmk || ldmk->type == LandMark::LANDMARK_TYPR::DELETE)
+                continue;
+            
+            Scalar color;
+            if (ldmk->type == LandMark::LANDMARK_TYPR::GOOD) {
+                color = Scalar(0, 255, 0);
+            } else {
+                color = Scalar(0, 0, 255);
+            }
+            cv::circle(image, Point(px(0), px(1)), 3, color, 1);
+            it++;
+        }
+        cv::imshow("Current Image", image);
+        cv::waitKey(10);
+        return true;
+    } 
+
     void Viewer::run() {
         pangolin::CreateWindowAndBind("SVO: Map Viewer",1024,768);
 
@@ -87,9 +112,7 @@ namespace mSVO {
 
             pangolin::FinishFrame();
 
-            cv::Mat& image = frame->imagePyr()[0];
-            cv::imshow("Current Image", image);
-            cv::waitKey(30);
+            showFrame(frame.get());
         }
     }
 
