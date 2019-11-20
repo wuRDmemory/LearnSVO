@@ -73,7 +73,7 @@ int main(int argc, char* argv[]) {
     double last_timestamp = -1.0;
     for (string& image_name: image_list) {
         double timestamp = timestamp = atof(image_name.c_str());
-        if (timestamp < last_timestamp + 0.1f) { // control frequency
+        if (timestamp < last_timestamp + 0.05f) { // control frequency
             continue;
         }
         last_timestamp = timestamp;

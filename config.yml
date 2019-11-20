@@ -34,7 +34,7 @@ min_inlier_thr: 50
 min_disparty_thr: 10
 
 # map parameter
-key_frame_size:      3
+key_frame_size:      8
 project_ratio_thr:   0.1
 close_key_frame_cnt: 5
 
@@ -59,11 +59,12 @@ track_move_distance: 1.5
 depth_filter_track_max_gap: 3
 depth_filter_iter_cnt: 1000
 depth_filter_ncc_score: 100
-depth_filter_sigma_thr: 0.01
+depth_filter_sigma_thr: 100
 
 #--------------------------------------------------------------------------------------------
 # Viewer Parameters
 #---------------------------------------------------------------------------------------------
+waitSeconds: 0.5
 viewer:
   KeyFrameSize: 0.05
   KeyFrameLineWidth: 1

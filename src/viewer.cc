@@ -30,12 +30,14 @@ namespace mSVO {
 
     bool Viewer::showFrame(Frame* frame) {
         cv::Mat image = frame->imagePyr()[0];
+        cv::cvtColor(image, image, cv::COLOR_GRAY2BGR);
+
         auto& obs = frame->obs();
         auto  it  = obs.begin();
         while (it != obs.end()) {
-            FeaturePtr feature = *it;
-            LandMarkPtr ldmk   = feature->mLandmark;
-            Vector2f   px = feature->mPx;
+            FeaturePtr  ftr  = (*it);
+            LandMarkPtr ldmk = ftr->mLandmark;
+            Vector2f    px   = ftr->mPx;
             if (!ldmk || ldmk->type == LandMark::LANDMARK_TYPR::DELETE)
                 continue;
             
@@ -49,7 +51,7 @@ namespace mSVO {
             it++;
         }
         cv::imshow("Current Image", image);
-        cv::waitKey(10);
+        cv::waitKey(30);
         return true;
     } 
 

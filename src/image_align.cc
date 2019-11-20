@@ -56,7 +56,8 @@ namespace mSVO {
             // if the feature has no landmark or this point can not calculate the gradient of image
             if (!(*begin) or 
                 !INSIDEIMAGE(u_iref, border, 0, width) or 
-                !INSIDEIMAGE(v_iref, border, 0, height)) {
+                !INSIDEIMAGE(v_iref, border, 0, height) or 
+                !(*begin)->mLandmark) {
                 mVisables[feature_cnt] = false;
                 continue;
             }

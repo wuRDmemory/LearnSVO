@@ -31,7 +31,7 @@ namespace mSVO {
         int j = 0;
         float distarties = 0.0f;
         mvk::CameraModel* camera = currFrame->camera();
-        Features& ref_features = mRefFrame->obs();
+        Features&   ref_features = mRefFrame->obs();
         vector<Vector3f> ref_obs(status.size());
         vector<Vector3f> cur_obs(status.size());
         for (int i = 0; i < status.size(); i++) 

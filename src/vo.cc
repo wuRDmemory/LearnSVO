@@ -152,7 +152,7 @@ namespace mSVO {
         
         // ALL BA
         mBundleAdjust->run();
-        LOG(INFO) << ">>> [process frame] Oc: " << mNewFrame->twc().transpose();
+        // LOG(INFO) << ">>> [process frame] Oc: " << mNewFrame->twc().transpose();
 
         // remove most far keyframe in localmap
         if (mLocalMap->getKeyframeSize() > Config::keyFrameNum()) {
@@ -182,7 +182,7 @@ namespace mSVO {
             updateLevel = UPDATE_FRAME;
         }
         LOG(INFO) << ">>> ";
-        // usleep(500000);
+        usleep(Config::waitSeconds()*1000000);
     }
 
     bool VO::needKeyFrame(int trackCnt, FramePtr frame) {
@@ -194,12 +194,14 @@ namespace mSVO {
 
         // add drop check
         int dropCnt  = mOldTrackCnt - trackCnt;
-        mOldTrackCnt = trackCnt;
-        if (dropCnt > 10) {
+        if (dropCnt > 30) {
             LOG(INFO) << ">>> [needKeyFrame] drop feature count: " << dropCnt << "(" << mOldTrackCnt << "-->" << trackCnt << "), add new key frame";
+            mOldTrackCnt = trackCnt;
             return true;
         }
 
+        mOldTrackCnt = trackCnt;
+        
         // check translation
         Vector3f& curPos = frame->twc();
         auto& keyFrames = mLocalMap->keyFrames();

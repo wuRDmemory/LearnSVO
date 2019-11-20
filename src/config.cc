@@ -47,6 +47,8 @@ Config::Config(string configFile) {
     mDepthFilterNCCScore    = static_cast<float>(file["depth_filter_ncc_score"]);
     mDepthFilterSigmaThr    = static_cast<float>(file["depth_filter_sigma_thr"]);
 
+    mWaitSeconds            = static_cast<float>(file["waitSeconds"]);
+    
     cv::FileNode node = file["instrinsc"];
     { // instrinsc
         mfx = static_cast<float>(node["fx"]);

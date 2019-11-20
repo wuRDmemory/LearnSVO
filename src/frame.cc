@@ -33,6 +33,8 @@ namespace mSVO {
             ftr = NULL;
         });
 
+        mObs.clear();
+
         float scale = 1.0f/Config::pyramidFactor();
         mImagePyr.resize(Config::pyramidNumber());
         mImagePyr[0] = img.clone();

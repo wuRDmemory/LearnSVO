@@ -109,8 +109,8 @@ namespace mSVO {
         unique_lock<mutex> lock(mAddSeedLock);
         for (int i = 0, N = corners.size(); i < N; i++) {
             Vector2f px(corners[i].x, corners[i].y);
-            FeaturePtr f = new Feature(keyframe.get(), px, cornersLevel[i]);
-            SeedPtr newSeed = new Seed(f, mDepthMin, mDepthMean);
+            FeaturePtr ftr  = new Feature(keyframe.get(), px, cornersLevel[i]);
+            SeedPtr newSeed = new Seed(ftr, mDepthMin, mDepthMean);
             mSeedList.push_back(newSeed);
         }
         mSeedUpdateHalt = false;
@@ -192,11 +192,12 @@ namespace mSVO {
             }
 
             // TODO: check the coverage
-            if (seed->sigma2 < Config::depthFilterSigmaThr()) {
-                assert(feature->mLandmark == NULL); // TODO this should not happen anymore
+            if (sqrt(seed->sigma2) < seed->zRange/Config::depthFilterSigmaThr()) {
+                assert(feature->mLandmark == NULL);
                 Vector3f wxyz(feature->mFrame->Rwc()*(feature->mDirect*(1.0/seed->mu)) + feature->mFrame->twc());
                 LandMarkPtr point = new LandMark(wxyz, feature);
                 feature->mLandmark = point;
+                // feature->mFrame->addFeature(feature);
                 {
                     // add the landmark to the candidate list
                     // cout << "seed: " << seed->id << " matured" << endl;
@@ -234,6 +235,7 @@ namespace mSVO {
             }
         }
         LOG(INFO) << ">>> [DepthFilter] erase " << eraseCnt << " seeds";
+        mSeedUpdateHalt = false;
         return true;
     }
 

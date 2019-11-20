@@ -27,7 +27,6 @@ namespace mSVO {
                 landmark->nProjectFrameFailed = 0;
                 landmark->nProjectFrameSuccess = 0;
                 landmark->nOptimizeFrameId = frame->ID();
-                frame->addFeature(landmark->obs().front());
                 it->second->mFrame->addFeature(it->second);
                 {
                     unique_lock<mutex> lock(mMutex);
@@ -146,7 +145,7 @@ namespace mSVO {
                         mTrashPoints.push_back(landmark);
                 }
 
-                mKeyFrames.erase(iter);
+                iter = mKeyFrames.erase(iter);
                 break;
             }
             iter++;

@@ -48,8 +48,9 @@ namespace mSVO {
             return a.second < b.second;
         });
 
-        // TODO: 2. project key frame's key points into current frame
-        //          assign them to grid cell
+        // 2. project key frame's key points into current frame
+        //    assign them to grid cell
+        int projKeyFramePointCnt = 0;
         keyframes.resize(min((int)keyframes.size(), 5));
         for (int i = 0; i < keyframes.size(); ++i) {
             FramePtr& frame = keyframes[i].first;
@@ -59,21 +60,32 @@ namespace mSVO {
                 if (!landmark || landmark->type == LandMark::LANDMARK_TYPR::DELETE) {
                     continue;
                 }
-                projectToCurFrame(curFrame, landmark);
+                projKeyFramePointCnt += int(projectToCurFrame(curFrame, landmark));
             }
         }
 
-        // TODO: 3. project all candidate landmark into current frame
-        //          assign them to grid cell
-        auto& candidates = mMap->candidatePointManager().candidateLandmark();
-        for (auto it = candidates.begin(); it != candidates.end(); it++) {
+        // 3. project all candidate landmark into current frame
+        //    assign them to grid cell
+        auto& candidates     = mMap->candidatePointManager().candidateLandmark();
+        int projCandidateCnt = 0;
+        for (auto it = candidates.begin(); it != candidates.end(); ) {
             if (it->first->type == LandMark::LANDMARK_TYPR::DELETE) {
+                it++;
                 continue;
             }
-            projectToCurFrame(curFrame, it->first);
+            if (!projectToCurFrame(curFrame, it->first)) {
+                it->first->nProjectFrameFailed++;
+                if (it->first->nProjectFrameFailed > 5) {
+                    it = candidates.erase(it);
+                    continue;
+                }
+            } else {
+                projCandidateCnt++;
+            }
+            it++;
         }
 
-        LOG(INFO) << ">>> [reproject] All project point: " << mProjectNum;
+        LOG(INFO) << ">>> [reproject] Project summary: KeyFrame's proj: " << projKeyFramePointCnt << "  proj candidate: " << projCandidateCnt << "  all proj: " << mProjectNum;
         // TODO: 4. align features in each cells
         // for each cell
         for (int i = 0; i < mGrid->cells.size(); i++) {

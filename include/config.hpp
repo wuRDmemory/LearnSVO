@@ -44,6 +44,7 @@ private:
     float mDepthFilterNCCScore;
     float mDepthFilterSigmaThr;
     float mfx, mfy, mcx, mcy, md0, md1, md2, md3, md4; 
+    float mWaitSeconds;
     float mViewKeyFrameSize;
     float mViewKeyFrameLineWidth;
     float mViewGraphLineWidth;
@@ -118,6 +119,8 @@ public:
     inline static int   depthFilterIterCnt()     { return mInstance->mDepthFilterIterCnt;     }
     inline static float depthFilterNCCScore()    { return mInstance->mDepthFilterNCCScore;    }
     inline static float depthFilterSigmaThr()    { return mInstance->mDepthFilterSigmaThr;    }
+
+    inline static float waitSeconds()            { return mInstance->mWaitSeconds;            }
 
     inline static float viewKeyFrameSize()       { return mInstance->mViewKeyFrameSize;       }
     inline static float viewKeyFrameLineWidth()  { return mInstance->mViewKeyFrameLineWidth;  }
