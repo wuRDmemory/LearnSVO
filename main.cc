@@ -43,8 +43,8 @@ int argparse(int argc, char* argv[]) {
 }
 
 int main(int argc, char* argv[]) {
-        // glog config
-    FLAGS_logtostderr = 1;
+    // glog config
+    // FLAGS_logtostderr = 1;
     google::InitGoogleLogging(argv[0]);
     
     // argue parse
@@ -62,12 +62,6 @@ int main(int argc, char* argv[]) {
     // vo class
     VO vo(config_file);
     vo.setup();
-    
-    Viewer* viewer = NULL;
-    if (VIEWER) {
-        viewer = new Viewer(vo.getMap());
-        viewer->setup();
-    }
 
     // main loop
     double last_timestamp = -1.0;
@@ -84,9 +78,6 @@ int main(int argc, char* argv[]) {
         }
 
         vo.addNewFrame(image, timestamp);
-        if (VIEWER) {
-            viewer->addCurrentFrame(vo.getCurrentFrame());
-        }
     }
     
     google::ShutdownGoogleLogging();

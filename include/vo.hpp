@@ -17,6 +17,7 @@
 #include "struct_optimize.hpp"
 #include "depth_filter.hpp"
 #include "bundle_adjustment.hpp"
+#include "viewer.hpp"
 
 namespace mSVO {
     using namespace std;
@@ -40,6 +41,7 @@ namespace mSVO {
 
     class VO {
     private:
+        ViewerPtr       mViewer;
         MapPtr          mLocalMap;
         FramePtr        mNewFrame, mRefFrame;
         CameraModelPtr  mCameraModel;

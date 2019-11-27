@@ -16,6 +16,7 @@ Config::Config(string configFile) {
     mImageHeight = static_cast<int>(file["image_height"]);
     mPyramidNum  = static_cast<int>(file["pyr_num"]);
     mFeatureNum  = static_cast<int>(file["ftr_num"]);
+    mFastThreshold = static_cast<int>(file["fast_thr"]);
 
     mKeyFrameNum      = static_cast<int>(file["key_frame_size"]);
     mProjectRatioThr  = static_cast<float>(file["project_ratio_thr"]);

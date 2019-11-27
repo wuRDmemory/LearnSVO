@@ -11,6 +11,7 @@ namespace mSVO {
         mDepthFilter = new DepthFilter(mLocalMap);
         mFeatureAlign = new FeatureAlign(mLocalMap);
         mBundleAdjust = new BundleAdjustment(5, mLocalMap);
+        mViewer       = new Viewer(mLocalMap);
     }
 
     VO::~VO() { 
@@ -30,6 +31,7 @@ namespace mSVO {
         LOG(INFO) << ">>> [VO] setup now";
         updateLevel = UPDATE_FIRST;
         mDepthFilter->startThread();
+        mViewer->setup();
     }
 
     void VO::addNewFrame(const cv::Mat& image, const double timestamp) {
@@ -53,6 +55,7 @@ namespace mSVO {
         }
 
         finishProcess(mNewFrame->ID(), res);
+        mViewer->addCurrentFrame(mNewFrame);
     }
 
     PROCESS_STATE VO::processFirstFrame() { 

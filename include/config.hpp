@@ -25,7 +25,8 @@ private:
     int mMinInlierThr;
     int mMinDispartyThr; 
     int mMinCornerThr;
-    int mKeyFrameNum; 
+    int mKeyFrameNum;
+    int mFastThreshold; 
     int mCloseKeyFrameCnt; 
     int mFeatureMatchMinThr;
     int mPoseOptimizeIterCnt;
@@ -80,8 +81,9 @@ public:
     inline static float pyramidFactor()  { return mInstance->mPyramidFactor; }
 
     // feature parameters
-    inline static int   width()  { return mInstance->mImageWidth;  }
-    inline static int   height() { return mInstance->mImageHeight; }
+    inline static int   width()   { return mInstance->mImageWidth;      }
+    inline static int   height()  { return mInstance->mImageHeight;     }
+    inline static int   fastThr() { return mInstance->mFastThreshold;   }
     inline static int   featureNumber()  { return mInstance->mFeatureNum;   }
     inline static int   gridCellNumber() { return mInstance->mGridCell;     }
 

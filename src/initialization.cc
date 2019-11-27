@@ -5,7 +5,7 @@
 
 namespace mSVO {
     KltHomographyInit::KltHomographyInit() { 
-        mCornerDetector = new Detector(Config::width(), Config::height(), Config::gridCellNumber(), Config::pyramidNumber(), 10.0f);
+        mCornerDetector = new Detector(Config::width(), Config::height(), Config::gridCellNumber(), Config::pyramidNumber(), Config::fastThr());
     }
 
     InitResult KltHomographyInit::addFirstFrame(FramePtr currFrame) {
@@ -23,6 +23,9 @@ namespace mSVO {
     }
 
     InitResult KltHomographyInit::addSecondFrame(FramePtr currFrame) {
+        const int w = currFrame->camera()->width();
+        const int h = currFrame->camera()->height();
+        
         vector<cv::Point2f> nextCorners;
         vector<uchar> status;
         vector<float> error;
@@ -38,15 +41,18 @@ namespace mSVO {
         if (status[i]) {
             Vector2f pref(mFirstCorners[i].x, mFirstCorners[i].y);
             Vector2f pcur(nextCorners[i].x,    nextCorners[i].y);
+
+            if (nextCorners[i].x < 0 or nextCorners[i].y < 0 or nextCorners[i].x > w or nextCorners[i].y > h) {
+                status[i] = false;
+                continue;
+            }
+
             mFirstCorners[j]      = mFirstCorners[i];
             nextCorners[j]        = nextCorners[i];
             mFirstCornersLevel[j] = mFirstCornersLevel[i];
 
             ref_obs[j] = camera->cam2world(pref);
             cur_obs[j] = camera->cam2world(pcur);
-
-            ref_obs[j].normalize(); 
-            cur_obs[j].normalize();
 
             distarties += (pcur - pref).norm();
             j++;
@@ -76,7 +82,6 @@ namespace mSVO {
         const Mat& K = camera->cvK();
         vector<bool> inliers;
         findFundamental(mFirstCorners, nextCorners, inliers, F21);
-        F21.convertTo(F21, CV_32F);
         cv::Mat  E = K.t()*F21*K;
         cv::Mat  R1, R2, t1, t2;
         LOG(INFO) << ">>> [second frame] find fundamental done!!! inliers " << std::accumulate(inliers.begin(), inliers.end(), 0);
@@ -135,12 +140,18 @@ namespace mSVO {
             if (depth <= 0) {
                 continue;
             }
+
             depthCnt ++;
             Vector3f xyz = ref_obs[i]*depth;
             LandMarkPtr ldmk = new LandMark(xyz);
             ldmk->type = LandMark::LANDMARK_TYPR::GOOD;
 
             Vector2f px1(mFirstCorners[i].x, mFirstCorners[i].y), px2(nextCorners[i].x, nextCorners[i].y);
+
+            if (px1.x() < 0 or px1.y() < 0 or px2.x() < 0 or px2.y() < 0) {
+                continue;
+            }
+
             FeaturePtr ref_feature = new Feature(mRefFrame.get(), ldmk, px1, ref_obs[i], mFirstCornersLevel[i]);
             FeaturePtr cur_feature = new Feature(currFrame.get(), ldmk, px2, cur_obs[i], mFirstCornersLevel[i]);
 
@@ -151,10 +162,10 @@ namespace mSVO {
             ldmk->addFeature(cur_feature);
         }
 
+        LOG(INFO) << ">>> [addSecondFrame] good feature " << depthCnt << "/" << best_inlier_cnt;
         #if SHOW_MATCH
         testDepth(currFrame);
         #endif
-        LOG(INFO) << ">>> [addSecondFrame] good feature " << depthCnt << "/" << best_inlier_cnt;
         return SUCCESS;
     }
 
@@ -182,7 +193,7 @@ namespace mSVO {
 
         // Perform all RANSAC iterations and save the solution with highest score
         RNG rng(time(NULL));
-        for(int it = 0; it<N/3; it++) {
+        for(int it = 0; it < 200; it++) {
             seens.clear();
             // Select a minimum set
             for(int j=0; j<8; j++) {
@@ -328,8 +339,8 @@ namespace mSVO {
         {
             bool bIn = true;
 
-            const Point2f &kp1 = refPoints[i];
-            const Point2f &kp2 = curPoints[i];
+            const Point2f kp1 = refPoints[i];
+            const Point2f kp2 = curPoints[i];
 
             const float u1 = kp1.x;
             const float v1 = kp1.y;
@@ -347,9 +358,9 @@ namespace mSVO {
 
             const float squareDist1 = num2*num2/(a2*a2+b2*b2);
 
-            const float chiSquare1 = squareDist1*invSigmaSquare;
+            const float chiSquare1  = squareDist1*invSigmaSquare;
 
-            if(chiSquare1>th)
+            if(chiSquare1 > th)
                 bIn = false;
             else
                 score += thScore - chiSquare1;
@@ -367,15 +378,12 @@ namespace mSVO {
 
             const float chiSquare2 = squareDist2*invSigmaSquare;
 
-            if(chiSquare2>th)
+            if(chiSquare2 > th)
                 bIn = false;
             else
                 score += thScore - chiSquare2;
 
-            if(bIn)
-                vbMatchesInliers[i]=true;
-            else
-                vbMatchesInliers[i]=false;
+            vbMatchesInliers[i] = bIn;
         }
 
         return score;
@@ -404,28 +412,38 @@ namespace mSVO {
         t21.copyTo(T2.col(3));
         T2 = K*T2;
 
+        int bad3DPoint = 0;
+        int bigError   = 0;
+        int badTheta   = 0;
+
         int good = 0;
         int j = 0;
         for (int i = 0; i < N; i++) {
-            Point2f& p1 = pts1[i];
-            Point2f& p2 = pts2[i];
+            Point2f p1 = pts1[i];
+            Point2f p2 = pts2[i];
 
             Mat Pw;
             Mat pt1 = (Mat_<float>(3,1) << (p1.x-cx)/fx, (p1.y-cy)/fy, 1);
             Mat pt2 = (Mat_<float>(3,1) << (p2.x-cx)/fx, (p2.y-cy)/fy, 1);
             pt1 /= cv::norm(pt1); pt2 /= cv::norm(pt2); 
-            calcu3DPoint(R21, t21, pt1, pt2, Pw);
+            
+            if (!calculate3DPoints(T1, T2, p1, p2, Pw)) {
+                bad3DPoint++;
+                continue;
+            }
             const float Pwx   = Pw.at<float>(0);
             const float Pwy   = Pw.at<float>(1);
             const float depth = Pw.at<float>(2);
             if (depth <= 0 or std::isnan(depth) or std::isinf(depth)) {
+                bad3DPoint++;
                 continue;
             }
 
             Mat line1 = Pw - O1;
             Mat line2 = Pw - O2;
             float theta = line1.dot(line2)/(cv::norm(line1)*cv::norm(line2));
-            if (theta > 0.99998) {
+            if (Pw.at<float>(2) <= 0 && theta < 0.99998) {
+                badTheta++;
                 continue;
             }
 
@@ -436,6 +454,7 @@ namespace mSVO {
 
             float error1 = (im1x-p1.x)*(im1x-p1.x)+(im1y-p1.y)*(im1y-p1.y);
             if (error1 > th) {
+                bigError++;
                 continue;
             }
 
@@ -447,6 +466,7 @@ namespace mSVO {
 
             float error2 = (im2x-p2.x)*(im2x-p2.x)+(im2y-p2.y)*(im2y-p2.y);
             if (Pc2.at<float>(2) <= 0 || error2 > th) {
+                bigError++;
                 continue;
             }
             inliers[i] = 1;
@@ -455,6 +475,7 @@ namespace mSVO {
             j ++;
         }
         depthes.resize(j);
+        cout << "summary: bad 3D: " << bad3DPoint << "  bigError: " << bigError << "  badTheta: " << badTheta << "  good: " << good << endl;
         return good;
     }
 
@@ -470,7 +491,7 @@ namespace mSVO {
         cvtColor(mergeImage, mergeImage, COLOR_GRAY2BGR);
         for (int i = 0; i < refPoints.size(); i++) {
             Scalar color(theRNG().uniform(0, 255), theRNG().uniform(0, 255));
-            line(mergeImage, refPoints[i], curPoints[i], color);
+            line(mergeImage, refPoints[i], curPoints[i], color, 1);
         }
         imshow("[init] match", mergeImage);
         waitKey();
@@ -493,7 +514,7 @@ namespace mSVO {
                 continue;
             }
 
-            Vector3f Pw = feature->mLandmark->xyz();
+            Vector3f Pw   = feature->mLandmark->xyz();
             Vector2f Pcxy = curFrame->world2uv(Pw);
             Vector2f Pcuv = feature->mPx;
             // Vector2f Pcuv = feature->mPx;
@@ -503,7 +524,7 @@ namespace mSVO {
             }
 
             Scalar color(theRNG().uniform(0, 255), theRNG().uniform(0, 255), theRNG().uniform(0, 255));
-            line(mergeImage, Point(Pcuv(0), Pcuv(1)), Point(Pcxy(0), Pcxy(1)), color);
+            line(mergeImage, Point(Pcuv(0), Pcuv(1)), Point(Pcxy(0), Pcxy(1)), color, 2);
             num++;
         }
 

@@ -16,20 +16,23 @@ using namespace Eigen;
 
 namespace mSVO {
     struct CellElem {
-        CellElem(): score(-1), level(0) {}
-        Point2f uv;
+        CellElem(): score(-1), level(-1), px(0, 0) {}
+        Point2f px;
         int   level;
         float score;
     };
 
     class Detector {
     private:
-        int mStep, mRows, mCols, mWidth, mHeight, mLevels;
+        int mStep, mRows;
+        int mCols, mWidth;
+        int mHeight, mLevels;
+        int mBorder;
+
         float mThreshold;
         Mat mMask;
-        Ptr<FastFeatureDetector> mDetector;
         vector<bool>     mOccupied;
-        vector<CellElem> mGridCell;
+        vector<CellElem> mCells;
         vector<Rect>     mGridCellRoi;
 
     public:

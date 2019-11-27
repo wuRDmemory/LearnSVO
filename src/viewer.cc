@@ -15,10 +15,8 @@ namespace mSVO {
     }
 
     bool Viewer::addCurrentFrame(FramePtr curFrame) {
-        {
-            unique_lock<mutex> lock(mAddFrameMutex);
-            mCurFrame  = curFrame;
-        }
+        unique_lock<mutex> lock(mAddFrameMutex);
+        mCurFrame = curFrame;
         return true;
     }
 
@@ -90,6 +88,7 @@ namespace mSVO {
             }
 
             if (!frame.get()) {
+                cout << "aaa" << endl;
                 continue;
             }
 
@@ -116,6 +115,9 @@ namespace mSVO {
 
             showFrame(frame.get());
         }
+
+        cv::destroyAllWindows();
+        cout << "$$$$ viewer done!!!" << endl;
     }
 
     bool Viewer::convertMatrix(Quaternionf& Qwc, Vector3f& twc, pangolin::OpenGlMatrix& M) {

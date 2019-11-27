@@ -6,19 +6,19 @@ namespace mSVO {
     int Seed::batchID = 0;
 
     Seed::Seed(FeaturePtr ftr, float depthMin, float depthMean) {
-        id = ID++;
+        id      = ID++;
         feature = ftr;
-        mu     = 1.0f/depthMean;
-        zRange = 1.0f/depthMin;
-        a = b  = 10;
-        sigma2 = (zRange*zRange)/36;
+        mu      = 1.0f/depthMean;
+        zRange  = 1.0f/depthMin;
+        a = b   = 10;
+        sigma2  = (zRange*zRange)/36;
         seenFrameID = batchID;
     }
 
     DepthFilter::DepthFilter(MapPtr map): mMap(map), mStop(false), 
                                           mNewKeyFrameFlag(false),
                                           mThread(NULL) {
-        mDetector = new Detector(Config::width(), Config::height(), Config::gridCellNumber(), Config::pyramidNumber(), 10.0f);
+        mDetector = new Detector(Config::width(), Config::height(), Config::gridCellNumber(), Config::pyramidNumber(), Config::fastThr());
     }
 
     DepthFilter::~DepthFilter() {
@@ -60,8 +60,14 @@ namespace mSVO {
             mNewKeyFrame     = frame;
             mConditionVariable.notify_one();
         } else {
-            runFilter(frame);
+            // runFilter(frame);
             initialKeyFrame(frame);
+            list<FramePtr>& keyFrames = mMap->keyFrames();
+            auto it = keyFrames.begin();
+            while (it != keyFrames.end()) {
+                runFilter(*it);
+                it++;
+            }
         }
     }
 
@@ -94,6 +100,12 @@ namespace mSVO {
             runFilter(frame);
             if(frame->isKeyFrame()) {
                 initialKeyFrame(frame);
+                list<FramePtr>& keyFrames = mMap->keyFrames();
+                auto it = keyFrames.begin();
+                while (it != keyFrames.end()) {
+                    runFilter(*it);
+                    it++;
+                }
             }
         }
     }

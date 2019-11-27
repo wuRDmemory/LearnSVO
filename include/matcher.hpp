@@ -16,6 +16,7 @@ namespace mSVO {
     using namespace Eigen;
     using namespace cv;
 
+    bool calculate3DPoints(Mat& T1, Mat& T2, Point2f p1, Point2f p2, Mat& point);
     bool  calcu3DPoint(Mat& Rcw, Mat& tcw, Mat& p1, Mat& p2, Mat& point);
     float calcuDepth(Matrix3f& Rcw, Vector3f& tcw, Vector3f& f1, Vector3f& f2);
     float calcuProjError(Mat& R, Mat& t, Mat& K, Point3f& point, Point2f uv);

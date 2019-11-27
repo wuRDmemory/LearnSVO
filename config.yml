@@ -11,6 +11,7 @@ pyr_factor: 2
 # feature parameters
 grid_cell: 10
 ftr_num: 500
+fast_thr: 40
 image_width: 640
 image_height: 480
 
@@ -64,7 +65,7 @@ depth_filter_sigma_thr: 100
 #--------------------------------------------------------------------------------------------
 # Viewer Parameters
 #---------------------------------------------------------------------------------------------
-waitSeconds: 0.5
+waitSeconds: 0.2
 viewer:
   KeyFrameSize: 0.05
   KeyFrameLineWidth: 1

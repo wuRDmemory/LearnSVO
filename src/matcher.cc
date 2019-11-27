@@ -17,22 +17,27 @@ namespace mSVO {
         return zs(0);
     }
 
-    bool calcu3DPoint(Mat& Rcw, Mat& tcw, Mat& p1, Mat& p2, Mat& point) {
-        // Mat A(4, 4, CV_32F);
-        // A.row(0) = p1.x*T1.row(2) - T1.row(0);
-        // A.row(1) = p1.y*T1.row(2) - T1.row(1);
-        // A.row(2) = p2.x*T2.row(2) - T2.row(0);
-        // A.row(3) = p2.y*T2.row(2) - T2.row(1);
+    bool calculate3DPoints(Mat& T1, Mat& T2, Point2f p1, Point2f p2, Mat& point) {
+        Mat A(4, 4, CV_32F);
+        A.row(0) = p1.x*T1.row(2) - T1.row(0);
+        A.row(1) = p1.y*T1.row(2) - T1.row(1);
+        A.row(2) = p2.x*T2.row(2) - T2.row(0);
+        A.row(3) = p2.y*T2.row(2) - T2.row(1);
 
-        // Mat U, W, VT;
-        // SVD svd;
-        // svd.compute(A, W, U, VT, SVD::MODIFY_A|SVD::FULL_UV);
-        // Mat pw = VT.row(3).t();
-        // float pwx = pw.at<float>(0);
-        // float pwy = pw.at<float>(1);
-        // float pwz = pw.at<float>(2);
-        // float pww = pw.at<float>(3);
-        // point  = pw.rowRange(0, 3)/pw.at<float>(3);
+        Mat U, W, VT;
+        SVD svd;
+        svd.compute(A, W, U, VT, SVD::MODIFY_A|SVD::FULL_UV);
+        Mat pw = VT.row(3).t();
+        float pwx = pw.at<float>(0);
+        float pwy = pw.at<float>(1);
+        float pwz = pw.at<float>(2);
+        float pww = pw.at<float>(3);
+        point  = pw.rowRange(0, 3)/pw.at<float>(3);      
+        return true; 
+    }
+
+    bool calcu3DPoint(Mat& Rcw, Mat& tcw, Mat& p1, Mat& p2, Mat& point) {
+
         Mat A(3, 2, CV_32F);
         Mat b(3, 1, CV_32F);
         A.col(0) = Rcw*p1;
@@ -43,13 +48,14 @@ namespace mSVO {
         Mat zs = -ATA.inv() * ATb;
         if (isinf(zs.at<float>(0)) or isnan(zs.at<float>(0)) or 
             isinf(zs.at<float>(1)) or isnan(zs.at<float>(1))) {
-            point = (Mat_<float>(3, 1) << 0,0,0);
+            point = (Mat_<float>(3, 1) << 0, 0, -1);
             return false;
         }
         Mat pw1 = p1*zs.at<float>(0);
         Mat pc2 = p2*zs.at<float>(1);
         Mat pw2 = Rcw.t()*(pc2 - tcw);
-        point = 0.5f*(pw1 + pw2);
+        // point = 0.5f*(pw1 + pw2);
+        point = pw1;
         return true;
     }
 

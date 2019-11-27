@@ -1,12 +1,16 @@
 #include "detector.hpp"
+#include <glog/logging.h>
 
 namespace mSVO {
     Detector::Detector(int width, int height, int step, int levels, float threshold): 
-        mWidth(width), mHeight(height), mStep(step), mLevels(levels), mThreshold(threshold) {
-        mDetector = cv::FastFeatureDetector::create(20);
+        mWidth(width), mHeight(height), mStep(step), 
+        mLevels(levels), mThreshold(threshold), mBorder(3) {
+        
+        /// some value
         mRows = mHeight / mStep;
         mCols = mWidth  / mStep;
 
+        /// ROIs 
         mGridCellRoi.resize(mStep*mStep);
         for (int i=0; i<mStep; i++)
         for (int j=0; j<mStep; j++) {
@@ -18,32 +22,56 @@ namespace mSVO {
     }
 
     bool Detector::detect(Frame* frame, vector<Point2f>& keyPoints, vector<int>& pointsLevel) {
-        int allPN   = 0;
-        int validPN = 0;
-        cv::Mat& image = frame->imagePyr()[0];
-        for (int i=0; i < mStep; i++)
-        for (int j=0; j < mStep; j++) {
-            cv::Rect& rroi = mGridCellRoi[i*mStep + j];
-            cv::Point tl   = rroi.tl();
-            cv::Point br   = rroi.br();
-            cv::Mat roi    = image.rowRange(tl.y, br.y).colRange(tl.x, br.x);
-            // find fast corner
-            vector<cv::Point2f> corner;
-            cv::goodFeaturesToTrack(roi, corner, 10, 0.1, 5);
-            for (int k=0; k<corner.size(); k++) {
-                allPN ++;
-                Point px(corner[k].x+tl.x, corner[k].y+tl.y);
-                int x = int(px.x) / mStep;
-                int y = int(px.y) / mStep;
+        vector<Mat>& pyrImages = frame->imagePyr();
+        assert(pyrImages.size() == mLevels);
+        
+        for (int l = 0; l < mLevels; l++) {
+            vector<KeyPoint> kps;
+            FAST(pyrImages[l], kps, mThreshold);
+
+            /*  find the most strong response key point  */
+            for (int j = 0; j < kps.size(); j++) {
+                KeyPoint& kp = kps[j];
+                Point2f   pt = kp.pt*(1 << l);
+                if (pt.x < mBorder          || pt.y < mBorder          || 
+                    pt.x > mWidth - mBorder || pt.y > mHeight - mBorder) {
+                    continue;
+                }
+
+                const int x  = pt.x / mStep;
+                const int y  = pt.y / mStep;
+                
                 if (mOccupied[y*mCols + x]) {
                     continue;
                 }
-                mOccupied[y*mCols + x] = true;
-                keyPoints.emplace_back(corner[k].x+tl.x, corner[k].y+tl.y);
-                pointsLevel.emplace_back(0);
-                validPN++;
+
+                if (mCells[y*mCols + x].score < kp.response) {
+                    mCells[y*mCols + x].score = kp.response;
+                    mCells[y*mCols + x].px    = pt;
+                    mCells[y*mCols + x].level = l;
+                }
             }
         }
+        
+        vector<int> summary(mLevels+1, 0);
+
+        const int N = mRows * mCols;
+        pointsLevel.reserve(N);
+        keyPoints.reserve(N);
+        for (int i = 0; i < N; i++) {
+            CellElem& cell = mCells[i];
+            if (cell.level < 0)
+                continue;
+            keyPoints.push_back(cell.px);
+            pointsLevel.push_back(cell.level);
+
+            summary[cell.level]++;
+            summary.back()++;
+        }
+
+        LOG(INFO) << ">>> [Detect] Summary : Level: " << summary[0] << "  " << summary[1] << "  " << summary[2] << "  total: " << summary.back();
+
+        // reset all occupied cell
         reset();
         return true;
     }
@@ -61,9 +89,6 @@ namespace mSVO {
     bool Detector::setMask(const Features& obs) {
         for (auto it = obs.begin(), end = obs.end(); it != end; it++) {
             Vector2f uv = (*it)->mPx;
-            // if (mMask.at<uchar>(int(uv.y()), int(uv.y()))) {
-            //     cv::circle(mMask, Point(uv.x(), uv.y()), 15, cv::Scalar::all(0), -1);
-            // }
             int x = int(uv(0)) / mStep;
             int y = int(uv(1)) / mStep;
             mOccupied[y*mCols + x] = true;
@@ -74,7 +99,8 @@ namespace mSVO {
     }
 
     bool Detector::reset() {
-        // mGridCell.resize(mCols*mRows, CellElem());
+        mCells.clear();
+        mCells.resize(mCols*mRows, CellElem());
         mOccupied.clear();
         mOccupied.resize(mRows*mCols, false);
         // mMask = Mat(mHeight, mWidth, CV_8U, Scalar::all(255));

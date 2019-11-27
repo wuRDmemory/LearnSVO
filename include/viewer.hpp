@@ -44,4 +44,6 @@ namespace mSVO {
         bool drawPoint(Features& features, bool active);
         bool showFrame(Frame* frame);
     };
+
+    typedef Viewer* ViewerPtr;
 }
